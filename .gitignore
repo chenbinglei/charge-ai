@@ -1,0 +1,17 @@
+# macOS Finder metadata
+.DS_Store
+
+# Local editor and runtime artifacts
+.idea/
+.vscode/
+*.log
+
+# Secrets and local environment overrides
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx

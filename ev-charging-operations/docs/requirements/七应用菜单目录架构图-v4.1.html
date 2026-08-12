@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>七应用菜单目录架构图 v4.1</title>
+  <style>
+    :root { color-scheme: light dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; color: light-dark(#1d2733, #e9edf2); background: light-dark(#f4f7fb, #14181e); }
+    .shell { min-height: 100vh; padding: 20px; }
+    header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin: 0 auto 14px; max-width: 1540px; }
+    h1 { margin: 0; font-size: 20px; font-weight: 650; }
+    .hint { margin: 6px 0 0; color: light-dark(#5d6978, #aeb8c5); font-size: 13px; }
+    .legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; color: light-dark(#5d6978, #aeb8c5); font-size: 12px; }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+    .root-dot { background: #275dce; } .l1-dot { background: #0e8175; } .l2-dot { background: #65748b; } .l3-dot { background: #8b5c1b; }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 auto 12px; max-width: 1540px; }
+    .branches { display: flex; gap: 7px; flex-wrap: wrap; margin: -3px auto 12px; max-width: 1540px; }
+    .branches[hidden] { display: none; }
+    .tabs button, .tools button { appearance: none; border: 1px solid light-dark(#cad5e2, #44505e); background: light-dark(#fff, #202731); color: inherit; border-radius: 7px; min-height: 32px; padding: 5px 11px; font: inherit; font-size: 13px; cursor: pointer; }
+    .tabs button[aria-pressed="true"] { border-color: #275dce; background: light-dark(#e9f0ff, #1c315a); color: light-dark(#164793, #cddcff); font-weight: 650; }
+    .branches button { appearance: none; border: 1px solid light-dark(#d3dde8, #465261); background: transparent; color: light-dark(#4f5d6d, #bdc7d3); border-radius: 6px; padding: 4px 9px; font: inherit; font-size: 12px; cursor: pointer; }
+    .branches button[aria-pressed="true"] { border-color: #0e8175; color: light-dark(#08685e, #96e2d8); background: light-dark(#e5f7f4, #153e3b); font-weight: 650; }
+    .workspace { position: relative; max-width: 1540px; height: min(72vh, 780px); min-height: 520px; margin: 0 auto; overflow: hidden; border: 1px solid light-dark(#ced8e4, #3c4856); border-radius: 12px; background: light-dark(#fff, #1b2129); box-shadow: 0 8px 28px light-dark(#ced5df80, #00000035); }
+    svg { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; cursor: grab; background-image: radial-gradient(light-dark(#d9e1ec, #34404d) 1px, transparent 1px); background-size: 22px 22px; }
+    svg.dragging { cursor: grabbing; }
+    .edge { fill: none; stroke: light-dark(#aebdce, #657184); stroke-width: 1.35; }
+    .node rect { stroke-width: 1.25; rx: 9; ry: 9; }
+    .node text { pointer-events: none; fill: light-dark(#172230, #edf2f9); font-size: 12px; }
+    .node .node-title { font-size: 13px; font-weight: 650; }
+    .node.root rect { fill: light-dark(#e7f0ff, #18325e); stroke: #275dce; }
+    .node.l1 rect { fill: light-dark(#e5f7f4, #153e3b); stroke: #0e8175; }
+    .node.l2 rect { fill: light-dark(#f0f3f7, #293441); stroke: light-dark(#8fa0b3, #728299); }
+    .node.l3 rect { fill: light-dark(#fff5df, #4a391f); stroke: #a56b14; }
+    .node:hover rect, .node.selected rect { stroke: #e95b24; stroke-width: 2.5; }
+    .tools { position: absolute; left: 14px; bottom: 14px; display: flex; gap: 6px; padding: 7px; border: 1px solid light-dark(#d0dae6, #465361); border-radius: 9px; background: light-dark(#fffffff0, #202731f0); backdrop-filter: blur(8px); }
+    .tools button { min-width: 34px; padding: 4px 8px; }
+    .tools output { display: grid; place-items: center; min-width: 43px; color: light-dark(#4f5d6d, #bac5d2); font-size: 12px; }
+    .minimap { position: absolute; right: 14px; bottom: 14px; width: 192px; height: 108px; border: 1px solid light-dark(#d0dae6, #465361); border-radius: 7px; background: light-dark(#fffffff0, #202731f0); }
+    .minimap rect.viewport { fill: #275dce20; stroke: #275dce; stroke-width: 1.4; }
+    .footer { max-width: 1540px; margin: 10px auto 0; color: light-dark(#5d6978, #aeb8c5); font-size: 12px; }
+    @media (max-width: 700px) { .shell { padding: 12px; } header { display: block; } .legend { justify-content: flex-start; margin-top: 10px; } .workspace { height: 70vh; min-height: 460px; } .minimap { width: 144px; height: 82px; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div><h1>七应用菜单目录架构图</h1><p class="hint">横向分层 · 滚轮缩放 · 拖拽平移 · 单击节点聚焦分支</p></div>
+      <div class="legend" aria-label="层级图例"><span><i class="dot root-dot"></i>应用</span><span><i class="dot l1-dot"></i>一级菜单</span><span><i class="dot l2-dot"></i>二级菜单</span><span><i class="dot l3-dot"></i>三级菜单 / Tab</span></div>
+    </header>
+    <nav class="tabs" id="appTabs" aria-label="应用切换"></nav>
+    <nav class="branches" id="branchTabs" aria-label="P1 一级菜单导航" hidden></nav>
+    <section class="workspace" aria-label="可缩放菜单架构图">
+      <svg id="graph" role="img" aria-label="七应用菜单目录架构图。可滚轮缩放、拖拽平移及单击节点聚焦。"><g id="viewport"><g id="edges"></g><g id="nodes"></g></g></svg>
+      <div class="tools" aria-label="视图控制"><button type="button" id="zoomOut" aria-label="缩小">−</button><output id="zoomLabel">100%</output><button type="button" id="zoomIn" aria-label="放大">＋</button><button type="button" id="homeView">回到根节点</button><button type="button" id="fitView">适配全图</button></div>
+      <svg class="minimap" id="minimap" aria-hidden="true"><g id="miniContent"></g><rect class="viewport" id="miniViewport"></rect></svg>
+    </section>
+    <p class="footer">橙色描边表示当前聚焦节点；再次选择应用或点击“回到根节点”可恢复浏览起点。</p>
+  </main>
+  <script>
+    const apps = [
+      { id: 'P1', name: '运营管理平台', items: [
+        ['运营总览', '—', '运营概览', '核心指标｜实时充电｜站点态势｜收入趋势｜V2G摘要'], ['运营总览', '—', '待办与预警', '审批待办｜异常订单｜资金预警｜监管失败｜工单超时'],
+        ['场站与运维', '资产管理', '场站管理', '基础资料｜经营属性｜收益模型｜开放范围｜扩展字段｜变更记录'], ['场站与运维', '资产管理', '设备管理', '充电设备｜计量设备｜设备关系｜运行状态｜数据接入状态｜重卡/V2G属性'], ['场站与运维', '资产管理', '资产字段模板', '模板｜字段定义｜适用范围｜版本｜授权与审计'], ['场站与运维', '场站服务', '服务配置', '营业状态｜开放对象｜营业时间｜服务标签｜站内公告｜占位提醒时长'], ['场站与运维', '场站服务', '停车服务协同', '停车场映射｜充电减免｜核销撤销｜异常'], ['场站与运维', '场站服务', '出入口与车位协同', '道闸映射｜车位闸机映射｜进出场记录｜异常'], ['场站与运维', '场站服务', '园区便民服务协同', '门禁服务｜权益授权｜使用记录｜异常'], ['场站与运维', '场站服务', '场站定时充电策略', '策略｜目标场站/设备/枪口｜启停计划｜执行记录｜执行异常｜授权来源'], ['场站与运维', '运行维护', '实时监控', '场站态势｜设备状态｜枪口状态｜实时会话'], ['场站与运维', '运行维护', '场站数据分析', '多场站｜统计数据点｜曲线｜时间粒度｜明细｜导出'], ['场站与运维', '运行维护', '设备数据分析', '多设备｜功能点｜曲线｜时间粒度｜明细｜采样质量｜导出'], ['场站与运维', '运行维护', '告警管理', '确认｜升级｜屏蔽｜恢复｜统计'], ['场站与运维', '运行维护', '运维工单', '工单｜巡检｜派工｜验收｜SLA'], ['场站与运维', '运行维护', '远程操作记录', '启停｜复位｜操作结果｜审计'],
+        ['客户与权益', '个人客户', '个人用户', '用户资料｜车辆｜订单｜权益｜账户摘要｜行为记录'], ['客户与权益', '个人客户', '会员与权益', '会员规则｜等级｜权益包｜适用范围｜发放与核销'], ['客户与权益', '企业客户', '企业管理', '企业资料｜合同｜组织架构｜企业角色｜成员账号｜页面数据权限｜服务状态'], ['客户与权益', '企业客户', '企业成员账户', '员工司机｜账号状态｜车辆分组可见范围｜绑定电卡'], ['客户与权益', '企业客户', '企业车辆管理', '企业车辆｜车辆分组｜可用场站｜额度｜变更记录'], ['客户与权益', '企业客户', '企业电卡管理', '企业电卡｜电卡分组｜卡余额｜冻结｜绑卡｜挂失'], ['客户与权益', '合作运营', '租户管理', '租户资料｜组织架构｜租户角色｜租户用户｜页面数据权限｜服务范围｜结算主体'], ['客户与权益', '合作运营', '合作方管理', '合作协议｜渠道合作｜合作站点｜授权范围'],
+        ['交易与售后', '充电交易', '充电订单', '进行中｜已完成｜异常待处理｜人工结算｜订单调整'], ['交易与售后', '充电交易', '占位提醒', '待提醒｜提醒记录｜已结束'], ['交易与售后', '售后服务', '退款与补差', '预付差额退款｜充值退款｜原路退款｜补收｜处理记录'], ['交易与售后', '售后服务', '客服与申诉', '咨询｜投诉｜占位申诉｜评价｜回访｜SLA'],
+        ['计费与营销', '计费管理', '充电计费管理', '计费规则｜服务费规则｜时段价格｜适用范围｜版本｜发布记录'], ['计费与营销', '计费管理', '企业协议价', '协议主体｜车辆分组/电卡分组｜适用场站｜充电电价/服务费｜优先级｜版本｜生效失效｜审计'], ['计费与营销', '计费管理', '购售电价', '购电价模板｜售电价模板｜尖峰平谷深｜日期范围｜场站绑定'], ['计费与营销', '营销权益', '营销活动', '活动介绍｜活动规则｜预算｜承担方｜适用站点｜效果分析'], ['计费与营销', '营销权益', '发券活动', '新人有礼｜邀新有礼｜微信群领券｜直发券活动｜导入发券'], ['计费与营销', '营销权益', '充值活动', '充值活动｜充值活动订单｜赠送规则｜预算｜效果分析'], ['计费与营销', '营销权益', '充电活动', '充电有礼｜场站活动｜适用站点｜活动效果'], ['计费与营销', '营销权益', '积分活动', '积分兑换｜积分抽奖｜规则｜奖品｜库存｜结果'], ['计费与营销', '营销权益', '精准营销', '客群筛选｜精准营销｜客情关怀｜触达记录｜效果分析'], ['计费与营销', '营销权益', '优惠资产与核销', '卡券｜红包｜积分｜兑换｜冻结｜核销｜成本归属'],
+        ['资金与结算', '个人资金', '个人资金管理', '钱包余额｜充值批次｜预付冻结｜退款｜支付流水'], ['资金与结算', '个人资金', '个人交易明细', '单笔预付｜个人充值｜个人退款｜渠道结果（只读）'], ['资金与结算', '企业资金', '企业资金账户', '预存余额｜授信｜资金划拨｜分组资金｜冻结｜扣款'], ['资金与结算', '企业资金', '企业充值明细', '充值｜到账｜失败｜退款（仅总资金账户）'], ['资金与结算', '租户结算', '结算账户管理', '对公账户｜银联账户｜第三方账户｜审核｜启停｜变更'], ['资金与结算', '租户结算', '场站结算方案', '方案版本｜场站绑定｜分成｜费率｜税率｜生效记录'], ['资金与结算', '租户结算', '租户结算账单', '月度账单｜差异｜调账｜确认｜锁单'], ['资金与结算', '租户结算', '付款与回单', '转账执行｜失败重试｜撤销补付｜回单'], ['资金与结算', '账务与票据', '渠道与账务对账', '支付｜订单｜资金账｜结算账｜发票账｜差异'], ['资金与结算', '账务与票据', '用户充电发票', '个人发票｜企业发票｜申请｜红冲｜下载｜异常'], ['资金与结算', '账务与票据', '租户来票管理', '结算履约发票｜验票｜关联付款'], ['资金与结算', '账务与票据', '平台服务费发票', '服务费计费｜开票｜红冲｜关联结算'],
+        ['V2G运营', '放电运营', '放电授权与策略', '主体授权｜策略｜计划｜审批｜审计'], ['V2G运营', '放电运营', '放电订单', '进行中｜已完成｜异常｜计量明细'], ['V2G运营', '放电结算', '放电价格与计费', '放电价格｜计费规则｜版本｜发布'], ['V2G运营', '放电结算', '放电结算与对账', '收益结算｜账单｜对账｜调账'], ['V2G运营', '放电监控', '放电监控与分析', '实时态势｜经营分析｜告警｜异常处置'],
+        ['数据分析', '经营分析', '经营分析与报表', '收入｜订单｜站点｜用户｜企业｜营销｜导出订阅'], ['数据分析', '经营分析', '收益分析', '电量统计｜损耗电量｜充放电收益｜运营补贴｜成本｜年化收益率｜投资回收'], ['数据分析', '资产分析', '资产与运维分析', '利用率｜故障率｜服务质量｜设备健康｜重卡/V2G专题'],
+        ['监管接入', '监管运营', '监管业务档案', '运营商｜站点｜设备｜业务参数映射'], ['监管接入', '监管运营', '监管报送与补推', '报送记录｜漏推｜补推｜回执'], ['监管接入', '监管运营', '监管对账与异常', '订单｜金额｜状态差异｜处置记录'],
+        ['系统与配置', '应用与内容', '小程序管理', '应用档案｜主体/类型｜启停状态｜版本发布｜灰度/回滚｜配置审计'], ['系统与配置', '应用与内容', '小程序内容配置', '首页内容｜功能入口｜活动位｜业务开关'], ['系统与配置', '应用与内容', '运营大屏配置与发布', '布局｜指标｜专题｜发布版本｜发布记录'], ['系统与配置', '应用与内容', '消息与公告配置', '模板｜触达渠道｜公告｜发送记录｜失败处理'], ['系统与配置', '交易配置', '支付渠道与路由', '微信｜支付宝｜银联｜银盛｜状态｜商户引用｜对账'], ['系统与配置', '交易配置', '结算渠道配置', '转账渠道｜限额｜风控｜执行健康度'], ['系统与配置', '权限管理', '平台管理员', '平台角色｜全租户权限｜数据范围'], ['系统与配置', '权限管理', '租户权限分配', '可授权范围｜企业授权上限｜有效期'], ['系统与配置', '权限管理', '营销权限', '活动类型｜页面操作｜场站范围｜预算范围｜审批权限｜有效期'], ['系统与配置', '权限管理', '授权审计', '平台租户企业授权链｜同步状态｜差异｜审计'], ['系统与配置', '基础设置', '基础设置', '字典｜审批流｜参数｜操作日志']
+      ]},
+      { id: 'P2', name: '企业客户管理平台', items: [['企业首页','—','企业概览','余额与额度预警｜异常订单｜待办｜经营摘要'],['企业管理','企业组织','企业组织管理','企业资料｜部门｜成员｜账号｜授权摘要'],['车辆与电卡','车辆管理','车辆管理','企业车辆｜车辆分组｜可用场站｜额度｜变更记录'],['车辆与电卡','电卡管理','电卡管理','企业电卡｜电卡分组｜绑卡｜余额｜冻结'],['资金与授权','资金管理','资金账户','预存余额｜授信｜充值｜划拨｜流水｜冻结扣款'],['资金与授权','用车控制','用车额度与授权','分组额度｜日/月限制｜可用场站｜成员可见范围'],['订单与服务','订单管理','充电订单与对账','订单｜异常｜对账单｜差异处理'],['订单与服务','发票服务','发票管理','抬头｜申请｜下载｜红冲状态'],['数据分析','企业分析','数据报表','车辆分组｜成员｜站点｜费用｜能耗']]},
+      { id: 'M1', name: '个人充电小程序', items: [['首页','找站','—','地图｜列表｜搜索｜筛选｜站点详情｜枪口详情'],['权益','我的权益','—','会员｜卡券｜红包｜积分｜活动｜使用记录'],['扫码充电','启动充电','—','扫码桩码｜选枪｜支付确认｜充电中｜结束结算'],['订单','充电订单','—','进行中｜已完成｜异常｜订单详情'],['订单','售后服务','—','退款补差｜停车减免权益｜客服'],['我的','个人资金','—','钱包｜充值｜流水｜退款记录'],['我的','个人服务','—','车辆｜实名认证｜客服｜设置'],['我的','V2G 放电','—','扫码放电｜放电中实时状态/数据｜放电订单｜收益余额｜收益明细｜提现｜提现记录'],['我的','发票服务','—','发票抬头｜申请开票｜开票记录｜下载｜红冲状态']]},
+      { id: 'M2', name: '企业充电小程序', items: [['首页','扫码充电','—','扫码桩码｜充电中｜可用站点｜充电指引'],['订单','企业充电订单','—','进行中｜已完成｜异常标记｜订单详情'],['我的','我的车辆分组额度','—','已绑定分组｜可用额度｜冻结｜可用站点'],['我的','我的电卡','—','绑定卡｜卡余额｜冻结｜单笔限额｜卡流水'],['我的','个人服务','—','资料｜帮助｜权限说明｜设置'],['我的','V2G 放电','—','扫码放电｜放电中实时状态/数据｜放电订单｜收益余额｜收益明细｜提现｜提现记录']]},
+      { id: 'M3', name: '运营商小程序', items: [['工作台','今日经营','—','经营指标｜待办｜告警｜实时订单｜快捷操作｜工作空间切换'],['场站运营','场站实时态势','—','场站列表/地图｜设备/枪口状态｜服务状态｜在充订单｜远程操作记录'],['数据','运营趋势','—','经营统计｜充电趋势｜功率趋势｜设备健康｜场站排行｜导出'],['订单','订单处置','—','订单查询｜异常协办｜退款/申诉协办'],['我的','账号与授权协同','—','当前组织｜身份切换｜权限说明｜消息设置｜运维工单｜结算与对账｜消息通知｜平台财务协同']]},
+      { id: 'M4', name: '企业客户管理小程序', items: [['工作台','今日经营','—','今日充电｜余额额度预警｜待办｜异常提醒｜快捷操作'],['场站','场站实时态势','—','可用场站｜设备/枪口状态｜在充订单｜异常告警'],['数据','企业趋势','—','充电统计｜充电趋势｜功率趋势｜能耗｜费用｜站点对比'],['订单','企业订单','—','订单｜异常｜对账摘要'],['我的','企业与车辆电卡','—','企业资料｜成员轻管理｜车辆/分组/额度/可用场站｜电卡/分组/绑卡/余额冻结｜帮助设置'],['我的','发票服务','—','发票抬头｜申请开票｜开票记录｜下载｜红冲状态']]},
+      { id: 'D1', name: '运营大屏', items: [['运营总览','—','—','平台经营核心指标'],['场站与设备态势','—','—','场站｜设备｜枪口实时态势'],['订单与营收态势','—','—','订单｜收入｜结算趋势'],['告警与运维态势','—','—','告警｜工单｜服务质量'],['V2G专题','—','—','仅开通 V2G 时展示放电运营专题'],['监管专题','—','—','仅按授权展示监管报送相关指标']]}
+    ];
+
+    const svg = document.getElementById('graph');
+    const viewport = document.getElementById('viewport');
+    const edgesLayer = document.getElementById('edges');
+    const nodesLayer = document.getElementById('nodes');
+    const tabs = document.getElementById('appTabs');
+    const branchTabs = document.getElementById('branchTabs');
+    const zoomLabel = document.getElementById('zoomLabel');
+    const mini = document.getElementById('minimap');
+    const miniContent = document.getElementById('miniContent');
+    const miniViewport = document.getElementById('miniViewport');
+    const ns = 'http://www.w3.org/2000/svg';
+    let current = apps[0], nodes = [], bounds = { width: 1, height: 1 }, view = { x: 30, y: 40, k: .45 }, dragging = null, selected = null, p1Mode = 'index';
+
+    function make(tag, attrs = {}) { const el = document.createElementNS(ns, tag); Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value)); return el; }
+    function wrap(value, width) { const output = []; let line = ''; for (const char of Array.from(value)) { if (char === '｜') { if (line) output.push(line); line = ''; continue; } if (line.length >= width) { output.push(line); line = ''; } line += char; } if (line) output.push(line); return output; }
+    function node(id, type, title, detail, parent) { const titleLines = wrap(title, type === 'l3' ? 16 : 13); const detailLines = detail ? wrap(detail, 17) : []; const width = type === 'root' ? 190 : type === 'l3' ? 248 : 204; const height = 26 + titleLines.length * 17 + (detailLines.length ? 8 + detailLines.length * 15 : 0) + 16; return { id, type, titleLines, detailLines, width, height, parent, children: [], x: 0, y: 0 }; }
+    function build(app) {
+      const result = [], byId = new Map(); const add = item => { result.push(item); byId.set(item.id, item); return item; };
+      add(node('root', 'root', `${app.id} ${app.name}`, '', null));
+      if (app.id === 'P1' && p1Mode === 'index') {
+        [...new Set(app.items.map(item => item[0]))].forEach((name, index) => {
+          const item = add(node(`l1:${name}`, 'l1', name, '', 'root')); item.x = 300 + (index % 5) * 236; item.y = 80 + Math.floor(index / 5) * 248; byId.get('root').children.push(item);
+        });
+        byId.get('root').x = 48; byId.get('root').y = 250;
+        return result;
+      }
+      app.items.forEach(([l1, l2, l3, tab]) => {
+        const level1 = `l1:${l1}`; const level2 = `${level1}|l2:${l2}`; const level3 = `${level2}|l3:${l3}`;
+        if (!byId.has(level1)) add(node(level1, 'l1', l1, '', 'root'));
+        if (!byId.has(level2)) add(node(level2, 'l2', l2, '', level1));
+        if (!byId.has(level3)) add(node(level3, 'l3', l3, `Tab：${tab}`, level2));
+      });
+      result.forEach(item => { if (item.parent) byId.get(item.parent).children.push(item); });
+      const leaves = result.filter(item => item.children.length === 0); let cursor = 68;
+      leaves.forEach(item => { item.y = cursor; cursor += item.height + 30; });
+      const placeParents = item => { if (!item.children.length) return item.y; item.children.forEach(placeParents); item.y = item.children.reduce((sum, child) => sum + child.y + child.height / 2, 0) / item.children.length - item.height / 2; return item.y; };
+      placeParents(byId.get('root'));
+      result.forEach(item => { item.x = ({ root: 48, l1: 292, l2: 550, l3: 812 })[item.type]; });
+      return result;
+    }
+    function draw() {
+      nodes = build(current); bounds.width = Math.max(...nodes.map(item => item.x + item.width)) + 80; bounds.height = Math.max(...nodes.map(item => item.y + item.height)) + 70;
+      edgesLayer.replaceChildren(); nodesLayer.replaceChildren();
+      nodes.forEach(item => { if (!item.parent) return; const parent = nodes.find(candidate => candidate.id === item.parent); const startX = parent.x + parent.width, startY = parent.y + parent.height / 2, endX = item.x, endY = item.y + item.height / 2; const midX = startX + (endX - startX) / 2; edgesLayer.append(make('path', { class: 'edge', d: `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}` })); });
+      nodes.forEach(item => { const group = make('g', { class: `node ${item.type}${selected === item.id ? ' selected' : ''}`, transform: `translate(${item.x} ${item.y})`, role: 'button', tabindex: '0', 'aria-label': `${item.titleLines.join('')}，单击聚焦分支` }); group.addEventListener('click', event => { event.stopPropagation(); focus(item.id); }); group.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); focus(item.id); } }); group.append(make('rect', { width: item.width, height: item.height })); let y = 22; item.titleLines.forEach(line => { const text = make('text', { class: 'node-title', x: 14, y }); text.textContent = line; group.append(text); y += 17; }); if (item.detailLines.length) { y += 7; item.detailLines.forEach((line, index) => { const text = make('text', { x: 14, y, opacity: index === 0 ? .82 : .7 }); text.textContent = line; group.append(text); y += 15; }); } nodesLayer.append(group); });
+      drawMini(); applyView();
+    }
+    function applyView() { viewport.setAttribute('transform', `translate(${view.x} ${view.y}) scale(${view.k})`); zoomLabel.value = `${Math.round(view.k * 100)}%`; zoomLabel.textContent = zoomLabel.value; updateMiniViewport(); }
+    function centerOn(item, scale = .72) { const box = svg.getBoundingClientRect(); view.k = Math.max(.18, Math.min(1.8, scale)); view.x = box.width / 2 - (item.x + item.width / 2) * view.k; view.y = box.height / 2 - (item.y + item.height / 2) * view.k; applyView(); }
+    function home() { selected = null; draw(); if (current.id === 'P1' && p1Mode === 'index') fit(); else centerOn(nodes.find(item => item.id === 'root'), current.id === 'P1' ? .55 : .78); }
+    function fit() { const box = svg.getBoundingClientRect(); view.k = Math.max(.07, Math.min(1.1, Math.min((box.width - 42) / bounds.width, (box.height - 42) / bounds.height))); view.x = (box.width - bounds.width * view.k) / 2; view.y = (box.height - bounds.height * view.k) / 2; selected = null; draw(); }
+    function focus(id) { if (current.id === 'P1' && p1Mode === 'index' && id.startsWith('l1:')) { p1Mode = 'all'; renderBranches(id); } selected = id; draw(); const item = nodes.find(candidate => candidate.id === id); centerOn(item, item.type === 'l3' ? 1.02 : item.type === 'l2' ? .88 : .72); }
+    function zoomAt(clientX, clientY, factor) { const box = svg.getBoundingClientRect(); const px = clientX - box.left, py = clientY - box.top; const worldX = (px - view.x) / view.k, worldY = (py - view.y) / view.k; view.k = Math.max(.07, Math.min(2.4, view.k * factor)); view.x = px - worldX * view.k; view.y = py - worldY * view.k; applyView(); }
+    function drawMini() { const miniBox = mini.getBoundingClientRect(); const mw = miniBox.width || 192, mh = miniBox.height || 108, padding = 7; const scale = Math.min((mw - padding * 2) / bounds.width, (mh - padding * 2) / bounds.height); mini.setAttribute('viewBox', `0 0 ${mw} ${mh}`); miniContent.replaceChildren(); nodes.forEach(item => { miniContent.append(make('rect', { x: padding + item.x * scale, y: padding + item.y * scale, width: Math.max(2, item.width * scale), height: Math.max(2, item.height * scale), rx: 1, fill: item.type === 'root' ? '#275dce' : item.type === 'l1' ? '#0e8175' : item.type === 'l2' ? '#748397' : '#a56b14', opacity: .88 })); }); mini.dataset.scale = scale; mini.dataset.padding = padding; }
+    function updateMiniViewport() { const box = svg.getBoundingClientRect(), scale = Number(mini.dataset.scale || 1), padding = Number(mini.dataset.padding || 0); const worldX = -view.x / view.k, worldY = -view.y / view.k; miniViewport.setAttribute('x', padding + worldX * scale); miniViewport.setAttribute('y', padding + worldY * scale); miniViewport.setAttribute('width', Math.min(bounds.width, box.width / view.k) * scale); miniViewport.setAttribute('height', Math.min(bounds.height, box.height / view.k) * scale); }
+    function renderBranches(active = '') {
+      branchTabs.replaceChildren(); branchTabs.hidden = current.id !== 'P1'; if (current.id !== 'P1') return;
+      const buttons = [['index', '一级菜单索引'], ['all', '完整目录']].concat([...new Set(current.items.map(item => item[0]))].map(name => [`l1:${name}`, name]));
+      buttons.forEach(([id, label]) => { const button = document.createElement('button'); button.type = 'button'; button.textContent = label; button.setAttribute('aria-pressed', String((id === 'index' && p1Mode === 'index') || (id === active))); button.addEventListener('click', () => { if (id === 'index') { p1Mode = 'index'; home(); renderBranches(); return; } if (id === 'all') { p1Mode = 'all'; fit(); renderBranches('all'); return; } p1Mode = 'all'; focus(id); }); branchTabs.append(button); });
+    }
+    function setCurrent(app) { current = app; p1Mode = app.id === 'P1' ? 'index' : 'all'; [...tabs.children].forEach(button => button.setAttribute('aria-pressed', String(button.dataset.id === app.id))); renderBranches(); home(); }
+    apps.forEach(app => { const button = document.createElement('button'); button.type = 'button'; button.dataset.id = app.id; button.textContent = `${app.id} ${app.name}`; button.setAttribute('aria-pressed', String(app === current)); button.addEventListener('click', () => setCurrent(app)); tabs.append(button); });
+    svg.addEventListener('wheel', event => { event.preventDefault(); zoomAt(event.clientX, event.clientY, event.deltaY < 0 ? 1.15 : 1 / 1.15); }, { passive: false });
+    svg.addEventListener('pointerdown', event => { if (event.target.closest('.node')) return; dragging = { x: event.clientX, y: event.clientY, viewX: view.x, viewY: view.y }; svg.setPointerCapture(event.pointerId); svg.classList.add('dragging'); });
+    svg.addEventListener('pointermove', event => { if (!dragging) return; view.x = dragging.viewX + event.clientX - dragging.x; view.y = dragging.viewY + event.clientY - dragging.y; applyView(); });
+    svg.addEventListener('pointerup', event => { dragging = null; svg.releasePointerCapture?.(event.pointerId); svg.classList.remove('dragging'); });
+    mini.addEventListener('pointerdown', event => { const rect = mini.getBoundingClientRect(), scale = Number(mini.dataset.scale || 1), padding = Number(mini.dataset.padding || 0), x = (event.clientX - rect.left - padding) / scale, y = (event.clientY - rect.top - padding) / scale, box = svg.getBoundingClientRect(); view.x = box.width / 2 - x * view.k; view.y = box.height / 2 - y * view.k; applyView(); });
+    document.getElementById('zoomIn').addEventListener('click', () => { const box = svg.getBoundingClientRect(); zoomAt(box.left + box.width / 2, box.top + box.height / 2, 1.2); });
+    document.getElementById('zoomOut').addEventListener('click', () => { const box = svg.getBoundingClientRect(); zoomAt(box.left + box.width / 2, box.top + box.height / 2, 1 / 1.2); });
+    document.getElementById('homeView').addEventListener('click', home); document.getElementById('fitView').addEventListener('click', fit); svg.addEventListener('click', () => { selected = null; draw(); });
+    new ResizeObserver(() => { drawMini(); applyView(); }).observe(svg); renderBranches(); home();
+  </script>
+</body>
+</html>
