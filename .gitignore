@@ -7,6 +7,9 @@
 .svn/
 *.log
 
+# Java/Maven build outputs
+**/target/
+
 # Secrets and local environment overrides
 .env
 .env.*

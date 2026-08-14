@@ -1,6 +1,6 @@
 # Backend Services
 
-七个后端部署单元的唯一源码入口。当前仅完成目录对齐；架构跑道阶段将补 Maven parent、服务骨架、Flyway、契约校验、健康检查与测试。
+七个后端部署单元的唯一源码入口。W0 已完成 Maven parent、七服务无业务骨架、外部化配置、Actuator 健康检查和架构测试；W1 才建立 Flyway、契约校验、CI、Compose 与业务实现。
 
 实施边界见 [架构基线与服务边界](../../docs/design/充电运营平台架构基线与服务边界-v2.md)；每个 Topic 的发布者、消费者组和分区键见 [Kafka 事件目录](../../contracts/events/README.md)。服务 README 只描述本服务的入口，不另建同义架构说明。
 

@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: platform-service
+  main:
+    banner-mode: "off"
+server:
+  port: ${EVCO_PLATFORM_SERVER_PORT:8081}
+  shutdown: graceful
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  info:
+    env:
+      enabled: false
