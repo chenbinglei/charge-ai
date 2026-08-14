@@ -1,5 +1,7 @@
 # Device Connectivity Service
 
+> 下列为 W1+ 目标服务边界，不表示 W0 已连接 MQTT、发布或订阅事件、创建 Schema 或实现业务能力。
+
 设备互联服务：统一 MQTT 上下行、报文校验与标准化、命令收发、接入审计，以及 IOT 协同模式的管理同步 API。
 
 - 自有 schema：`evco_device_connectivity`；原始协议证据、MQTT 接入安全、IOT 同步收件箱与检查点只在本服务保存。

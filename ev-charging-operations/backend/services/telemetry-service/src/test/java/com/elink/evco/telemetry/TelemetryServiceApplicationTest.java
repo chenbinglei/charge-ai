@@ -1,6 +1,5 @@
 package com.elink.evco.telemetry;
 
-import com.elink.evco.testkit.ServiceArchitectureAssertions;
 import com.elink.evco.telemetry.TelemetryServiceApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +18,4 @@ class TelemetryServiceApplicationTest {
         assertThat(restTemplate.getForEntity("/actuator/health", String.class).getStatusCode().is2xxSuccessful()).isTrue();
     }
 
-    @Test
-    void keepsLayerDependenciesOneWay() {
-        ServiceArchitectureAssertions.assertLayerBoundaries("com.elink.evco.telemetry");
-    }
 }

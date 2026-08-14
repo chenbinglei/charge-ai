@@ -1,6 +1,6 @@
 # Directory Structure Guide
 
-本文档是当前**物理目录**的唯一说明。服务边界、数据归属、支付退款与 WebSocket 以 [架构基线与服务边界 v2](docs/design/充电运营平台架构基线与服务边界-v2.md) 为准；Kafka Topic 与消费组以 [事件目录](contracts/events/README.md) 为准；工程目录与 schema 落位参考 [工程架构与数据分库设计 v1.6](docs/design/充电运营平台工程架构与数据分库设计-v1.md)，命名以 [平台技术命名规范 v1](docs/standards/平台技术命名规范-v1.md) 为准。
+本文档是当前**物理目录**的唯一说明。服务边界、数据归属、支付退款与 WebSocket 以 [架构基线与服务边界 v2](docs/design/充电运营平台架构基线与服务边界-v2.md) 为准；Kafka Topic 与消费组以 [事件目录](contracts/events/README.md) 为准；目标目录与 schema 落位参考 [工程架构与数据分库设计 v1.6](docs/design/充电运营平台工程架构与数据分库设计-v1.md)，命名以 [平台技术命名规范 v1](docs/standards/平台技术命名规范-v1.md) 为准。
 
 当前项目已完成目录对齐，但仍处于设计与架构跑道阶段：目录中的 README 是工程入口说明，不表示已经存在可运行的业务实现。
 
@@ -61,5 +61,5 @@ ev-charging-operations/
 ## 维护规则
 
 1. 新增、移动或废弃一级/二级工程目录时，同步更新本文件和 [文档与代码输出归档规则](docs/standards/文档与代码输出归档规则.md)。
-2. 阶段 0 再补 Maven parent、pnpm workspace、Compose、CI、Flyway 迁移入口与契约校验；未完成前不以空路由或空消费者冒充可交付服务。
+2. W1 再补 pnpm workspace、Compose、CI、Flyway 迁移入口与契约校验；未完成前不以空路由或空消费者冒充可交付服务。
 3. 归档前在文件首部写明原因、日期和现役替代资料，并从 `docs/` 现役入口移除。

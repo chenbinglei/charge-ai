@@ -1,5 +1,7 @@
 # Platform Service
 
+> 下列为 W1+ 目标服务边界，不表示 W0 已发布或订阅事件、创建 Schema 或实现业务能力。
+
 平台业务服务：IAM、主数据、企业客户、交易、营销、运营与 V2G 模块。
 
 - 自有 schema：`evco_iam`、`evco_master`、`evco_customer`、`evco_trade`、`evco_marketing`、`evco_operations`、`evco_v2g`。

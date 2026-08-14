@@ -1,5 +1,7 @@
 # Telemetry Service
 
+> 下列为 W1+ 目标服务边界，不表示 W0 已消费事件、写入 ClickHouse/Redis 或提供 WebSocket。
+
 遥测与查询服务：实时状态投影、分钟归并、ClickHouse 写入、曲线、大屏、分析查询与 WebSocket 状态扇出。
 
 - 消费：已校验的设备遥测和订单关联事件；按设备/枪口局部顺序裁决状态。

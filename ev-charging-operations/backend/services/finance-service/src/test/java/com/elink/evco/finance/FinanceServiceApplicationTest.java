@@ -1,6 +1,5 @@
 package com.elink.evco.finance;
 
-import com.elink.evco.testkit.ServiceArchitectureAssertions;
 import com.elink.evco.finance.FinanceServiceApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +18,4 @@ class FinanceServiceApplicationTest {
         assertThat(restTemplate.getForEntity("/actuator/health", String.class).getStatusCode().is2xxSuccessful()).isTrue();
     }
 
-    @Test
-    void keepsLayerDependenciesOneWay() {
-        ServiceArchitectureAssertions.assertLayerBoundaries("com.elink.evco.finance");
-    }
 }

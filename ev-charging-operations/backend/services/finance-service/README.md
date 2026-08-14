@@ -1,5 +1,7 @@
 # Finance Service
 
+> 下列为 W1+ 目标服务边界，不表示 W0 已发布或订阅事件、创建 Schema 或实现业务能力。
+
 资金账务服务：账户、不可变分录、充值资金批次、冻结、结算、支付、退款、对账、出款与票据事实。
 
 - 自有 schema：`evco_finance`；`payment_intent`、`refund_transaction`、资金批次、账本和结算调整是唯一财务事实。

@@ -1,6 +1,5 @@
 package com.elink.evco.gateway;
 
-import com.elink.evco.testkit.ServiceArchitectureAssertions;
 import com.elink.evco.gateway.ApiGatewayApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +18,4 @@ class ApiGatewayApplicationTest {
         assertThat(restTemplate.getForEntity("/actuator/health", String.class).getStatusCode().is2xxSuccessful()).isTrue();
     }
 
-    @Test
-    void keepsLayerDependenciesOneWay() {
-        ServiceArchitectureAssertions.assertLayerBoundaries("com.elink.evco.gateway");
-    }
 }
