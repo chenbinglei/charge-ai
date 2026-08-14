@@ -1,6 +1,6 @@
 # Directory Structure Guide
 
-本文档是当前**物理目录**的唯一说明。服务边界、数据归属、支付退款与 WebSocket 以 [架构基线与服务边界 v2](docs/design/充电运营平台架构基线与服务边界-v2.md) 为准；Kafka Topic 与消费组以 [事件目录](contracts/events/README.md) 为准；目标目录与 schema 落位参考 [工程架构与数据分库设计 v1.6](docs/design/充电运营平台工程架构与数据分库设计-v1.md)，命名以 [平台技术命名规范 v1](docs/standards/平台技术命名规范-v1.md) 为准。
+本文档是当前**物理目录**的唯一说明。服务边界、数据归属、支付退款与 WebSocket 以 [架构基线与服务边界 v2](docs/design/充电运营平台架构基线与服务边界-v2.md) 为准；Kafka Topic 与消费组以 [事件目录](contracts/events/README.md) 为准；目标目录与 schema 落位参考 [工程架构与数据分库设计 v1.7](docs/design/充电运营平台工程架构与数据分库设计-v1.md)，命名以 [平台技术命名规范 v1](docs/standards/平台技术命名规范-v1.md) 为准。
 
 当前项目已完成目录对齐，但仍处于设计与架构跑道阶段：目录中的 README 是工程入口说明，不表示已经存在可运行的业务实现。
 
@@ -40,7 +40,7 @@ ev-charging-operations/
 | `docs/` | 当前有效的 Markdown 文档与 Mermaid 源码。 | 可执行脚本、生产凭据、历史草案。 |
 | `archive/` | 可追溯的历史需求、设计、接入、交付、旧目录快照。 | 当前开发依据、生产密钥、未脱敏日志。 |
 | `backend/services/` | 7 个服务的源代码、测试、服务自身配置。 | 跨服务共享业务实体、其他服务的数据库迁移。 |
-| `backend/libraries/` | 稳定复用的 ID、错误模型、审计上下文、传输契约和测试工具。 | 领域实体、Mapper、跨服务事务。 |
+| `backend/libraries/` | 稳定复用的 ID、错误模型、审计上下文、传输契约和测试工具。 | 业务实体、Mapper、跨服务事务。 |
 | `frontend/apps/` | 七端各自的 Vue/小程序工程。 | 其他应用可复用组件的副本。 |
 | `frontend/packages/` | UI、类型、API 客户端、设计令牌等共享包。 | 单一应用业务页面。 |
 | `database/` | 受版本控制的迁移、DDL、物化视图、备份恢复说明。 | 生产数据备份、连接密钥。 |
@@ -61,5 +61,5 @@ ev-charging-operations/
 ## 维护规则
 
 1. 新增、移动或废弃一级/二级工程目录时，同步更新本文件和 [文档与代码输出归档规则](docs/standards/文档与代码输出归档规则.md)。
-2. W1 再补 pnpm workspace、Compose、CI、Flyway 迁移入口与契约校验；未完成前不以空路由或空消费者冒充可交付服务。
+2. W1 再补 pnpm workspace、Docker Compose、GitHub Actions、Flyway 迁移入口、契约校验和《全栈研发工程规范》规定的传统分层/中文注释质量门禁；未完成前不以空路由或空消费者冒充可交付服务。
 3. 归档前在文件首部写明原因、日期和现役替代资料，并从 `docs/` 现役入口移除。
