@@ -15,6 +15,7 @@ Before planning, implementation, review, or a status report for the charging pla
 3. `ev-charging-operations/delivery/execution/00-执行总控台账.md` — current module, forecast, blockers and next action.
 4. `ev-charging-operations/delivery/execution/01-模块路线图与依赖矩阵.md` — prerequisites and mandatory regression scope.
 5. For a change, `02-变更与审批日志.md`; for completed work, `03-模块完成记录.md` and `04-一致性核对清单.md`.
+6. `ev-charging-operations/delivery/execution/05-SVN待同步清单.md` — company-intranet SVN availability and any offsite backlog.
 
 The approved target is 2026-08-17 to 2026-11-20, with 60 committed development workdays and no scheduled development from 2026-09-25 through 2026-10-07. This is a target, not authorization to cut scope or test gates. Weekends are not committed capacity; any overtime, schedule delay, new feature, or change to an accepted module requires the user's recorded approval.
 
@@ -34,16 +35,17 @@ Personal-wallet cash top-ups must be traceable funding lots that retain the orig
 
 1. Before changes, run `git status -sb` and inspect the affected files.
 2. Use a descriptive branch: `agent/<scope>` for assisted work, or `feat/<scope>`, `fix/<scope>`, `docs/<scope>` for team work.
-3. Keep commits focused and use Conventional Commits, for example `docs: add implementation plan` or `feat(platform): add tenant authorization`.
+3. Keep commits focused and use Conventional Commits with a Chinese summary by default, for example `docs: 增加实施计划` or `feat(platform): 增加租户授权`. Retain English only for product names, protocol names, paths, identifiers, or terms that cannot be stated precisely in Chinese.
 4. Push branches to `origin`; create a draft pull request to `main` by default. Direct pushes to `main` require the repository owner's explicit instruction.
 5. Before push, run the checks appropriate to the change and report the result. Never stage unrelated files.
 
 ## Dual-VCS workflow and rollback
 
 - This project is managed concurrently by Git and SVN. Git remains the module-level review and release history; SVN is the required fine-grained backup history at `https://win-eng4s42rbjg/svn/software/elink/trunk/charge-ai`. SVN credentials must remain in the operating-system keychain or SVN credential store and must never be recorded in this repository.
-- Before changing files, inspect both `git status -sb` and `svn status`; before a new work session, run `svn update` and resolve any incoming change before editing. Do not use force-push, destructive reset, remote deletion, or history rewriting to reconcile the two histories.
-- After every completed functional, configuration, test, or documentation change passes its applicable verification and required documentation sync, add only that change to SVN and commit it immediately with a concise message. Include the resulting SVN revision in the completion/change evidence when such evidence is required.
-- At the completion of a governed module, make the focused Conventional Commit in Git after its required gates and review. Record both the Git commit and the covered SVN revision(s) in module completion evidence; Git commits may aggregate the already-committed, coherent SVN changes for that module.
+- SVN is available only from the company intranet. Before changing files, inspect both `git status -sb` and `svn status`; before a new work session, run `svn update` and resolve any incoming change before editing. If the update or commit cannot reach the intranet, record every completed change in `delivery/execution/05-SVN待同步清单.md`, commit it to Git, and mark its SVN state as pending. The initial queue row may use `待生成` for the Git commit; immediately after Git returns the hash, backfill that hash into the queue in the next focused Git evidence commit. An authentication, authorization, certificate or merge-conflict failure is not an offsite exception: stop and resolve or report it instead of misclassifying it as a pending sync.
+- After every completed functional, configuration, test, or documentation change passes its applicable verification and required documentation sync, add only that change to SVN and commit it immediately with a concise Chinese message when the intranet is reachable. Outside the company, preserve the same scope, test evidence and intended Chinese SVN message in the pending list; do not claim the module or release fully complete until the actual SVN revision is recorded.
+- On the next company-intranet session, SVN reconciliation is the first action before new development: run `svn update`, review the pending list oldest first, verify scope and tests, commit each queued change to SVN, then write the resulting revision and completion time back to the list. Do not use an external mirror, force operation or history rewrite as a substitute for the internal SVN commit.
+- At the completion of a governed module, make the focused Conventional Commit in Git after its required gates and review. Use Chinese summaries by default. Record both the Git commit and the covered SVN revision(s) in module completion evidence; Git commits may aggregate the already-committed, coherent SVN changes for that module.
 - Keep the two trees content-identical except for administrative directories (`.git/`, `.svn/`) and intentionally ignored local artifacts. Before any Git or SVN commit, inspect the corresponding diff and status, run the applicable tests, and scan for sensitive files. Do not commit `.git/`, `.svn/`, credentials, local environments, or build artifacts.
 - Roll back committed work through a new Git revert or an SVN reverse merge/revert commit, preserving history and recording the reason, affected revision(s), verification and recovery result. Never make a code change that cannot be traced to a Git commit or SVN revision after it is declared complete.
 
