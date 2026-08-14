@@ -1,11 +1,14 @@
+# Spring 应用基础配置；仅提供无业务 W0 启动能力。
 spring:
   application:
     name: finance-service
   main:
     banner-mode: "off"
+# 服务监听端口可由环境变量覆盖，仓库不保存环境专有配置。
 server:
   port: ${EVCO_FINANCE_SERVER_PORT:8082}
   shutdown: graceful
+# 管理端点仅暴露健康和信息，禁止在 W0 暴露业务或敏感配置。
 management:
   endpoints:
     web:
