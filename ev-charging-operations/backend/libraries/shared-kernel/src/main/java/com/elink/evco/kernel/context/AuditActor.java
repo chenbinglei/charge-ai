@@ -3,7 +3,7 @@ package com.elink.evco.kernel.context;
 import java.util.Objects;
 
 /**
- * Non-sensitive reference to the actor responsible for an auditable action.
+ * 可审计动作执行主体的非敏感引用。
  */
 public record AuditActor(String type, String reference) {
     public AuditActor {

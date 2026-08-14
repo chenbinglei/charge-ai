@@ -3,7 +3,7 @@ package com.elink.evco.kernel.context;
 import java.util.Objects;
 
 /**
- * Stable, non-sensitive correlation identifier propagated across a request chain.
+ * 在请求链路中传播的稳定、非敏感关联标识。
  */
 public record TraceId(String value) {
     private static final int MAX_LENGTH = 128;

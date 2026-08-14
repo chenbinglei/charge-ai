@@ -1,7 +1,7 @@
 package com.elink.evco.telemetry;
 
 import com.elink.evco.testkit.ServiceArchitectureAssertions;
-import com.elink.evco.telemetry.bootstrap.TelemetryServiceApplication;
+import com.elink.evco.telemetry.TelemetryServiceApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

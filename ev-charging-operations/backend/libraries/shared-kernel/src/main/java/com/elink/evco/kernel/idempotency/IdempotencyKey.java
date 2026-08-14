@@ -3,7 +3,7 @@ package com.elink.evco.kernel.idempotency;
 import java.util.Objects;
 
 /**
- * Caller-supplied key for a single command's duplicate-detection boundary.
+ * 调用方提供的单一命令防重键，界定重复检测范围。
  */
 public record IdempotencyKey(String value) {
     private static final int MAX_LENGTH = 128;

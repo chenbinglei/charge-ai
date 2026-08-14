@@ -1,7 +1,7 @@
 package com.elink.evco.deviceconnectivity;
 
 import com.elink.evco.testkit.ServiceArchitectureAssertions;
-import com.elink.evco.deviceconnectivity.bootstrap.DeviceConnectivityServiceApplication;
+import com.elink.evco.deviceconnectivity.DeviceConnectivityServiceApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

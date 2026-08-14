@@ -1,7 +1,7 @@
 package com.elink.evco.finance;
 
 import com.elink.evco.testkit.ServiceArchitectureAssertions;
-import com.elink.evco.finance.bootstrap.FinanceServiceApplication;
+import com.elink.evco.finance.FinanceServiceApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

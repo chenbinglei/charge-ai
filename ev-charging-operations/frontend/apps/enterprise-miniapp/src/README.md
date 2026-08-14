@@ -1,3 +1,3 @@
-# Source
+# M2 源码骨架
 
-企业用户充电小程序源码目录。
+uni-app 实现时固定使用 `api/`、`components/`、`composables/`、`config/`、`constants/`、`pages/`、`static/`、`stores/`、`styles/`、`types/`、`utils/`。

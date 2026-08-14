@@ -1,4 +1,3 @@
-# Source
+# M3 源码骨架
 
-预留给应用源代码。
-
+uni-app 实现时固定使用 `api/`、`components/`、`composables/`、`config/`、`constants/`、`pages/`、`static/`、`stores/`、`styles/`、`types/`、`utils/`。

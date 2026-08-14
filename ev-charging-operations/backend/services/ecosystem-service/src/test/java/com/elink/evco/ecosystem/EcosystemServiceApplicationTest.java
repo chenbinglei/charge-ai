@@ -1,7 +1,7 @@
 package com.elink.evco.ecosystem;
 
 import com.elink.evco.testkit.ServiceArchitectureAssertions;
-import com.elink.evco.ecosystem.bootstrap.EcosystemServiceApplication;
+import com.elink.evco.ecosystem.EcosystemServiceApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
