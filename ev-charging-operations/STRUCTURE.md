@@ -1,6 +1,6 @@
 # Directory Structure Guide
 
-本文档是当前**物理目录**的唯一说明。服务边界、数据归属、支付退款与 WebSocket 以 [架构基线与服务边界 v2](docs/design/充电运营平台架构基线与服务边界-v2.md) 为准；Kafka Topic 与消费组以 [事件目录](contracts/events/README.md) 为准；工程目录与 schema 落位参考 [工程架构与数据分库设计 v1.3](docs/design/充电运营平台工程架构与数据分库设计-v1.md)，命名以 [平台技术命名规范 v1](docs/standards/平台技术命名规范-v1.md) 为准。
+本文档是当前**物理目录**的唯一说明。服务边界、数据归属、支付退款与 WebSocket 以 [架构基线与服务边界 v2](docs/design/充电运营平台架构基线与服务边界-v2.md) 为准；Kafka Topic 与消费组以 [事件目录](contracts/events/README.md) 为准；工程目录与 schema 落位参考 [工程架构与数据分库设计 v1.6](docs/design/充电运营平台工程架构与数据分库设计-v1.md)，命名以 [平台技术命名规范 v1](docs/standards/平台技术命名规范-v1.md) 为准。
 
 当前项目已完成目录对齐，但仍处于设计与架构跑道阶段：目录中的 README 是工程入口说明，不表示已经存在可运行的业务实现。
 
@@ -12,12 +12,13 @@ ev-charging-operations/
 ├── docs/                             # 当前有效的需求、设计、API、集成、规范、手册
 ├── archive/                          # 已替代/退役资料；不作为开发依据
 ├── backend/
-│   ├── services/                     # 六个独立 Maven 服务
+│   ├── services/                     # 七个独立 Maven 服务
 │   │   ├── api-gateway/
 │   │   ├── platform-service/
 │   │   ├── finance-service/
 │   │   ├── device-connectivity-service/
 │   │   ├── integration-service/
+│   │   ├── ecosystem-service/
 │   │   └── telemetry-service/
 │   └── libraries/                    # shared-kernel、生成的 contracts、testkit
 ├── frontend/
@@ -51,7 +52,7 @@ ev-charging-operations/
 
 | 范围 | 采用名称 |
 | --- | --- |
-| 后端服务 | `api-gateway`、`platform-service`、`finance-service`、`device-connectivity-service`、`integration-service`、`telemetry-service` |
+| 后端服务 | `api-gateway`、`platform-service`、`finance-service`、`device-connectivity-service`、`integration-service`、`ecosystem-service`、`telemetry-service` |
 | 前端七端 | `operations-web`、`enterprise-web`、`consumer-miniapp`、`enterprise-miniapp`、`tenant-operations-miniapp`、`enterprise-admin-miniapp`、`operations-dashboard` |
 | 归档旧目录 | `archive/code/legacy-placeholder-backend/`、`archive/code/legacy-placeholder-frontend/` |
 

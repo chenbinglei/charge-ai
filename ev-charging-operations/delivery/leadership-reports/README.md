@@ -9,4 +9,4 @@
 | `充电运营平台系统架构设计-管理汇报版.docx` | 服务与数据主责的管理摘要 | [架构基线与服务边界 v2](../../docs/design/充电运营平台架构基线与服务边界-v2.md) 与 [Kafka 事件目录](../../contracts/events/README.md)。 |
 | `系统逻辑架构-优化版.png` | 系统逻辑架构的一页图 | 同上；图中的链路不替代 Topic、消费组和字段级契约。 |
 
-2026-08-13 已核验 `leadership-reports_副本/` 内三份 DOCX 与本目录原件 SHA-256 完全一致；副本及其打包 ZIP 已移至 [交付归档](../../archive/delivery/README.md)，本目录保留唯一现役原件。
+2026-08-13 已核验 `leadership-reports_副本/` 内三份 DOCX 与本目录原件的 Word 正文 XML 一致；DOCX ZIP 包的 SHA-256 可因生成元数据不同而不同。副本及其打包 ZIP 已移至 [交付归档](../../archive/delivery/README.md)，本目录保留唯一现役原件。
