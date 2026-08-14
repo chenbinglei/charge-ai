@@ -4,6 +4,7 @@
 # Local editor and runtime artifacts
 .idea/
 .vscode/
+.svn/
 *.log
 
 # Secrets and local environment overrides

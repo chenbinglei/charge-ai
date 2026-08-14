@@ -1,0 +1,50 @@
+openapi: 3.1.0
+info:
+  title: EVCO high-risk operations API
+  version: 1.0.0
+paths:
+  /v1/device-control-commands:
+    post:
+      summary: Create a guarded device control command
+      operationId: createDeviceControlCommand
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202': {description: Accepted; command is asynchronously executed}
+        '409': {description: State-version, sequence, or idempotency conflict}
+  /v1/refund-requests:
+    post:
+      summary: Create a refund request against one original payment transaction
+      operationId: createRefundRequest
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202': {description: Accepted; financial eligibility is pending}
+        '409': {description: Refund amount or state conflict}
+  /v1/iot/master-sync-commands:
+    post:
+      summary: Accept signed IOT collaborative-mode master-data synchronization
+      operationId: acceptIotMasterSync
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202': {description: Accepted for ordered application}
+        '403': {description: Instance mode or source is forbidden}
+  /v1/regulatory-tasks/{regulatoryTaskId}:
+    get:
+      summary: Read masked task, attempt, receipt and C3-R evidence state
+      operationId: getRegulatoryTask
+      parameters:
+        - name: regulatoryTaskId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200': {description: Regulatory task projection}
+components:
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, minLength: 1, maxLength: 128}
