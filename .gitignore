@@ -10,6 +10,12 @@
 # Java/Maven build outputs
 **/target/
 
+# JavaScript build outputs and local package stores
+**/node_modules/
+**/dist/
+**/coverage/
+**/artifacts/
+
 # Secrets and local environment overrides
 .env
 .env.*

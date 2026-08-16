@@ -1,0 +1,15 @@
+{
+  "pages": [
+    {
+      "path": "pages/foundation/index",
+      "style": {
+        "navigationBarTitleText": "个人端工程基础"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarBackgroundColor": "#F5F7FA",
+    "backgroundColor": "#F5F7FA"
+  }
+}

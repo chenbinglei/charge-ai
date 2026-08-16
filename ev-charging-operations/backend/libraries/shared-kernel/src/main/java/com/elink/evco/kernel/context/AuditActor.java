@@ -9,9 +9,7 @@ import java.util.Objects;
  * @param reference 在主体类型内唯一的脱敏引用；不得写入完整手机号、证件或密钥。
  */
 public record AuditActor(String type, String reference) {
-    /**
-     * 创建审计主体并统一去除首尾空白，防止审计事实出现无法关联的空值。
-     */
+    /** 创建审计主体并统一去除首尾空白，防止审计事实出现无法关联的空值。 */
     public AuditActor {
         type = requireValue(type, "type");
         reference = requireValue(reference, "reference");

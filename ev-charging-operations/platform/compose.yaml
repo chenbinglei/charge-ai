@@ -1,0 +1,204 @@
+name: evco-foundation
+
+services:
+  mysql:
+    image: mysql:8.4.5@sha256:679e7e924f38a3cbb62a3d7df32924b83f7321a602d3f9f967c01b3df18495d6
+    profiles: [core]
+    environment:
+      MYSQL_DATABASE: evco_foundation
+      MYSQL_ROOT_PASSWORD: ${EVCO_MYSQL_ROOT_PASSWORD:-replace-with-local-only-password}
+      TZ: UTC
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: [CMD-SHELL, "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    mem_limit: 2g
+    cpus: 2.0
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.2@sha256:fbdbaea47b9ae4ecc2082ecdb4e1cea81e32176ffb1dcf643d422ad07427e5d9
+    profiles: [core]
+    command: [redis-server, --appendonly, "yes", --save, "60", "1"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    mem_limit: 512m
+    cpus: 0.5
+    restart: unless-stopped
+
+  kafka:
+    image: apache/kafka:3.9.0@sha256:fbc7d7c428e3755cf36518d4976596002477e4c052d1f80b5b9eafd06d0fff2f
+    profiles: [core]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: [CMD-SHELL, "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 40s
+    mem_limit: 2g
+    cpus: 2.0
+    restart: unless-stopped
+
+  emqx:
+    image: emqx/emqx:5.8.2@sha256:76bc406d14107aa73539178f536c05e4df2f1f54388bbbbc9d846599a51317f9
+    profiles: [iot]
+    environment:
+      EMQX_NODE__NAME: emqx@emqx
+      EMQX_ALLOW_ANONYMOUS: "false"
+    ports:
+      - "1883:1883"
+      - "18083:18083"
+    healthcheck:
+      test: [CMD-SHELL, "emqx ctl status"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 40s
+    mem_limit: 1g
+    cpus: 1.0
+    restart: unless-stopped
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.12.3.47@sha256:3fb2bd1a2fa9e095a1844b2b559eb580795773cf459a994f53be86e7ec999704
+    profiles: [telemetry]
+    environment:
+      CLICKHOUSE_DB: evco_telemetry_bootstrap
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      TZ: UTC
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    healthcheck:
+      test: [CMD-SHELL, "clickhouse-client --query 'SELECT 1'"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 40s
+    mem_limit: 2g
+    cpus: 2.0
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:RELEASE.2025-01-20T14-49-07Z@sha256:ed9be66eb5f2636c18289c34c3b725ddf57815f2777c77b5938543b78a44f144
+    profiles: [telemetry]
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${EVCO_MINIO_ROOT_USER:-local-minio-admin}
+      MINIO_ROOT_PASSWORD: ${EVCO_MINIO_ROOT_PASSWORD:-replace-with-local-only-password}
+      TZ: UTC
+    ports:
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: [CMD-SHELL, "curl --fail --silent http://localhost:9000/minio/health/ready"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+    mem_limit: 1g
+    cpus: 1.0
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.114.0@sha256:37fa87091cfaaec7234a27e4e395a40c31c2bfaea97a349a4afef6d9e9681197
+    profiles: [observability]
+    command: [--config=/etc/otelcol-contrib/config.yaml]
+    volumes:
+      - ./config/otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    healthcheck:
+      test: [CMD, /otelcol-contrib, --version]
+      interval: 15s
+      timeout: 10s
+      retries: 6
+    mem_limit: 512m
+    cpus: 0.5
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.0.1@sha256:565ee86501224ebbb98fc10b332fa54440b100469924003359edf49cbce374bd
+    profiles: [observability]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    volumes:
+      - ./observability/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: [CMD-SHELL, "wget --no-verbose --tries=1 --spider http://localhost:9090/-/ready"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
+    mem_limit: 1g
+    cpus: 1.0
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.4.0@sha256:d8ea37798ccc41061a62ab080f2676dda6bf7815558499f901bdb0f533a456fb
+    profiles: [observability]
+    environment:
+      GF_SECURITY_ADMIN_USER: local-admin
+      GF_SECURITY_ADMIN_PASSWORD: ${EVCO_GRAFANA_ADMIN_PASSWORD:-replace-with-local-only-password}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: [CMD-SHELL, "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+    mem_limit: 1g
+    cpus: 1.0
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  redis-data:
+  clickhouse-data:
+  minio-data:
+  prometheus-data:

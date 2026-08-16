@@ -11,9 +11,7 @@ public record IdempotencyKey(String value) {
     /** 单个防重键允许的最大字符数，防止异常输入占用防重存储。 */
     private static final int MAX_LENGTH = 128;
 
-    /**
-     * 规范化并校验防重键；此校验不替代业务层的幂等记录和结果重放。
-     */
+    /** 规范化并校验防重键；此校验不替代业务层的幂等记录和结果重放。 */
     public IdempotencyKey {
         value = Objects.requireNonNull(value, "idempotencyKey 不能为空").trim();
         if (value.isEmpty() || value.length() > MAX_LENGTH) {

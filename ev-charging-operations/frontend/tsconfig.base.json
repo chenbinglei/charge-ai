@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "composite": false,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["ES2023", "DOM", "ESNext.Disposable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "strict": true,
+    "target": "ES2022",
+    "useDefineForClassFields": true
+  }
+}

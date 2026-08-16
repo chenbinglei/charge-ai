@@ -9,15 +9,15 @@ import java.util.Objects;
  */
 public record TraceId(String value) {
     /** 单个追踪标识允许的最大字符数，避免日志和响应被异常输入放大。 */
+    private static final int MIN_LENGTH = 16;
+
     private static final int MAX_LENGTH = 128;
 
-    /**
-     * 规范化并校验追踪标识，保证所有入口可安全写入日志和响应头。
-     */
+    /** 规范化并校验追踪标识，保证所有入口可安全写入日志和响应头。 */
     public TraceId {
         value = Objects.requireNonNull(value, "traceId 不能为空").trim();
-        if (value.isEmpty() || value.length() > MAX_LENGTH) {
-            throw new IllegalArgumentException("traceId 长度必须为 1 到 128 个字符");
+        if (value.length() < MIN_LENGTH || value.length() > MAX_LENGTH) {
+            throw new IllegalArgumentException("traceId 长度必须为 16 到 128 个字符");
         }
     }
 }
