@@ -1,7 +1,7 @@
 # Kafka 事件目录与消费组清单
 
-> 版本：v1.1
-> 状态：**实施权威合同目录**；高风险 JSON Schema 已冻结于 `schemas/`，其余逐字段 AsyncAPI/Schema 须在 W1 按本目录落入同目录。
+> 版本：v1.2
+> 状态：**实施权威合同目录**；高风险 JSON Schema 已冻结于 `schemas/`。W1 Step 2 已新增公共事件信封草案；具体业务 Topic 的逐字段 AsyncAPI/Schema 仍须在对应业务模块审核后落入同目录。
 > 适用：`evco.*.v1` 内部 Kafka Topic。外部设备协议查 `contracts/mqtt/`；HTTP API 查 `contracts/openapi/`。
 > 架构依据：[架构基线与服务边界](../../docs/design/充电运营平台架构基线与服务边界-v2.md)。
 
@@ -16,12 +16,13 @@
 
 ## 2. 所有事件共用的信封
 
-每条消息必须使用 JSON `lowerCamelCase`，并至少包含：
+每条消息必须使用 JSON `lowerCamelCase`，并使用 [`schemas/event-envelope.v1.schema.json`](schemas/event-envelope.v1.schema.json) 中的公共信封。该草案没有声明运行时 Topic 或消费者；具体 Topic 仍以本目录的逐行登记为准。公共字段至少包含：
 
 ```json
 {
   "eventId": "全局唯一 ID",
   "eventType": "domain.entity.past-tense.v1",
+  "eventVersion": "1",
   "schemaVersion": "1.0",
   "occurredAt": "RFC 3339 UTC",
   "aggregateType": "业务聚合类型",
@@ -29,11 +30,17 @@
   "partitionKey": "与 Kafka key 相同的局部顺序键",
   "traceId": "端到端追踪 ID",
   "idempotencyKey": "业务去重键",
+  "producer": "唯一事实生产服务",
+  "scope": {"scopeType": "TENANT", "tenantId": "租户标识", "dataScopeVersion": 1},
   "payload": {}
 }
 ```
 
-设备事件另必须有 `sourceSystem`、`sourceSequence`、`sourceTime`、`receivedAt`、`tenantId`、`stationLifecycleId`、`deviceLifecycleId`、`connectorId` 和 `payloadHash`。金额一律为最小货币单位整数；支付、身份证、手机号、车牌、VIN 和密钥不得放入 Topic 名或未脱敏 payload。
+`eventVersion` 必须与 `eventType` 的大版本一致；`schemaVersion` 用于同大版本内的兼容演进。Kafka key 与 `partitionKey` 必须一致。`scope` 只能是带 `tenantId` 的 `TENANT`，或不带 `tenantId` 的 `PLATFORM`；不得把手机号、支付数据、身份证件、车牌、VIN 或密钥写入公共字段。
+
+AsyncAPI 组件草案位于 [`asyncapi/event-envelope-v1.yaml`](asyncapi/event-envelope-v1.yaml)，其中 `channels: {}` 是刻意的 W1 边界，不能据此创建 Topic。
+
+设备事件的具体 `payload` Schema 另必须包含 `sourceSystem`、`sourceSequence`、`sourceTime`、`receivedAt`、`stationLifecycleId`、`deviceLifecycleId`、`connectorId` 和 `payloadHash`；租户范围以公共 `scope.tenantId` 为准，不重复在顶层保存。金额一律为最小货币单位整数；支付、身份证、手机号、车牌、VIN 和密钥不得放入 Topic 名或未脱敏 payload。
 
 ## 3. 设备、遥测与主数据
 

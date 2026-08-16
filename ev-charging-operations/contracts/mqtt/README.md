@@ -1,6 +1,8 @@
 # 设备 MQTT 契约
 
-> 状态：W1 冻结；只适用于平台自管 EMQX 与已认证上游。GB/T 27930 约束车—桩通信，**不**替代本目录的平台北向 MQTT 契约。
+> 状态：W1 Step 2 已冻结公共报文元数据；具体 Topic、业务 payload、ACL 和真实设备联调在 W4 审核。只适用于平台自管 EMQX 与已认证上游。GB/T 27930 约束车—桩通信，**不**替代本目录的平台北向 MQTT 契约。
+
+所有 MQTT 报文先满足 [`schemas/message-envelope.v1.schema.json`](schemas/message-envelope.v1.schema.json) 的 `messageId`、版本、来源、设备/枪口、序列和时间元数据，再由具体 Topic Schema 限定 `payload`。公共元数据不是已开通的设备接入或 ACL。
 
 ## Topic 与 ACL
 
