@@ -2,7 +2,7 @@
 
 > 状态：现行
 > 适用：SVN 仅可在公司内网访问时，外网已完成变更的补提与审计。
-> 当前状态：有 2 项待同步。最近完成的功能/规范提交为 r10504；本清单自身的证据提交不纳入该口径，实际状态仍以 `svn status -u` 和 `svn log` 为准，避免递归的“最近 revision”表述。
+> 当前状态：0 项待同步。最近完成的 SVN 提交为 r10533（根目录 svn:ignore）；W1 工程跑道全部变更已同步至 SVN r10530–r10533。本清单自身的证据提交不纳入该口径，实际状态仍以 `svn status -u` 和 `svn log` 为准，避免递归的"最近 revision"表述。
 
 ## 使用规则
 
@@ -16,11 +16,12 @@
 
 | 编号 | 本地完成时间 | 范围 | Git commit | 验证 | 预定 SVN 提交说明 | 状态 / 实际 SVN revision | 同步时间 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| SVN-20260816-001 | 2026-08-16 | 统一 W1 入口状态、建立并按 P0/P1 补充《W1 工程跑道需求与验收包》、增加最终决策表、记录 Step 1 批准、增加 Step 2 技术设计与公共契约草案、同步现役导航、变更日志、完成记录和一致性入口；仅文档/契约草案，无生产代码、业务迁移或运行时 Topic。 | `1216903`, `5f65c60`, `93340c7`, `8656d2c`, `65e19d2`, `a3ccd88`, `3cd8954` | `git diff --check`；JSON Schema 解析；YAML 解析；Markdown 本地链接检查；SVN `update` 再次执行但服务器主动断开，`cleanup` 后无锁/无冲突，当前文档差异待同步。 | `docs: 增加W1工程跑道技术设计与公共契约草案` | Git 已提交；SVN 待内网恢复后按范围复核并提交 | — |
-| SVN-20260816-002 | 2026-08-16 | W1 无业务工程底座：Maven Wrapper/质量与 SBOM、Flyway 空迁移入口和检查、通用 API/TraceId/幂等/审计、契约检查、Kafka/Outbox/Inbox Testkit、Compose 四类 profile、前端七端 workspace/三主题 Token、CI 与安全扫描入口；同步 SVN 忽略 `node_modules`、`dist`、`artifacts` 本地生成物。无业务页面、业务 DDL/Flyway、业务 API、运行时业务 Topic 或消费者。 | `2572664` | Maven `verify`；前端 `pnpm run verify`、`pnpm run sbom`；契约/迁移/敏感信息检查；Compose `config --quiet`；浏览器 1920×1080、768×1024 主题/溢出检查。Docker daemon 不可用，Compose 实际健康检查与 Testcontainers 探针未通过、仅跳过。`git push` 因当前 GitHub OAuth 缺少 `workflow` scope 被拒绝，远端 PR 门禁尚未运行。 | `feat: 建立W1工程跑道基础` | Git 已本地提交，远端推送受 OAuth `workflow` scope 阻塞；SVN 待内网恢复后按范围复核并提交 | — |
+| SVN-20260816-001 | 2026-08-16 | 统一 W1 入口状态、建立并按 P0/P1 补充《W1 工程跑道需求与验收包》、增加最终决策表、记录 Step 1 批准、增加 Step 2 技术设计与公共契约草案、同步现役导航、变更日志、完成记录和一致性入口；仅文档/契约草案，无生产代码、业务迁移或运行时 Topic。 | `1216903`, `5f65c60`, `93340c7`, `8656d2c`, `65e19d2`, `a3ccd88`, `3cd8954` | `git diff --check`；JSON Schema 解析；YAML 解析；Markdown 本地链接检查。 | `docs: 增加W1工程跑道技术设计与公共契约草案` | **已同步 r10530** | 2026-08-17 |
+| SVN-20260816-002 | 2026-08-16 | W1 无业务工程底座：Maven Wrapper/质量与 SBOM、Flyway 空迁移入口和检查、通用 API/TraceId/幂等/审计、契约检查、Kafka/Outbox/Inbox Testkit、Compose 四类 profile、前端七端 workspace/三主题 Token、CI 与安全扫描入口；同步 SVN 忽略 `node_modules`、`dist`、`artifacts` 本地生成物。无业务页面、业务 DDL/Flyway、业务 API、运行时业务 Topic 或消费者。 | `2572664`, `043b763` | Maven `verify`；前端 `pnpm run verify`、`pnpm run sbom`；契约/迁移/敏感信息检查；Compose `config --quiet` 与实际健康检查通过；Testcontainers 中间件探针通过。Git 已推送至远端 `origin/agent/initial-platform-architecture`。 | `feat: 建立W1工程跑道基础` | **已同步 r10531–r10533** | 2026-08-17 |
 
 ## 历史记录
 
 | 时间 | 事项 | 结果 |
 | --- | --- | --- |
 | 2026-08-14 | 建立外网 SVN 待同步与回公司补提机制。 | 初始状态无待同步项；后续每项待同步工作均在本文件追加并回填实际 revision。 |
+| 2026-08-17 | 回到公司内网，执行 SVN `update`（版本 10517→10528）并补提 W1 全部待同步项。发现并修复 `.svn/wc.db` SQLite journal 模式冲突：每次 SVN 操作前需将 `journal_mode` 设为 `WAL` 以避免 `attempt to write a readonly database` 错误。 | SVN-20260816-001 同步至 r10530；SVN-20260816-002 同步至 r10531–r10533。工作副本干净，0 项待同步。 |
