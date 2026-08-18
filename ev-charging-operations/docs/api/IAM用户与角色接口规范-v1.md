@@ -33,7 +33,7 @@
 | `CreateUserRequest.roleIds` | array<number> | 初始绑定角色标识集合 | 至少一个；全部必须在操作者可授予范围内。 |
 | `UpdateUserRequest.version` | number | 乐观锁版本 | 必填；冲突返回 `VERSION_CONFLICT`。 |
 | `ReplaceUserRolesRequest.roleIds` | array<number> | 替换后的完整角色集合 | 必填；空集合仅在明确允许无角色保留账号时使用。 |
-| `ChangeUserStatusRequest.status` | string | 目标账户状态 | 枚举和状态迁移以 IAM 状态机为准。 |
+| `ChangeUserStatusRequest.status` | string | 目标账户状态 | 枚举为 `active`/`locked`/`disabled`；状态迁移以 IAM 状态机为准（`active → locked` 锁定、`locked → active` 解锁、`active/locked → disabled` 停用、`disabled → active` 恢复需审计；最后管理员保护对应 `active → disabled` 受保护）。 |
 | `UserListVO.roleNames` | array<string> | 可见角色名称摘要 | 只返回操作者有权查看的角色信息。 |
 | `UserDetailVO.version` | number | 用户当前并发版本 | 前端编辑/删除时原样回传。 |
 | `UserDetailVO.roles` | array | 角色绑定明细 | 不返回角色内部策略、密钥或不属于当前范围的数据。 |
