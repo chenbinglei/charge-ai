@@ -12,7 +12,6 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -27,17 +26,40 @@ class MiddlewareSmokeIntegrationTest {
     static final MySQLContainer<?> MYSQL =
             new MySQLContainer<>(
                             DockerImageName.parse(
-                                    "mysql:8.4.5@sha256:679e7e924f38a3cbb62a3d7df32924b83f7321a602d3f9f967c01b3df18495d6"))
+                                            "mysql:8.4.5@sha256:679e7e924f38a3cbb62a3d7df32924b83f7321a602d3f9f967c01b3df18495d6")
+                                    .asCompatibleSubstituteFor("mysql"))
                     .withDatabaseName("evco_foundation")
                     .withUsername("test")
                     .withPassword("test-password");
 
-    /** W1 固定的单节点 KRaft Kafka；测试仅查询集群元数据。 */
+    /**
+     * W1 固定的单节点 KRaft Kafka；与 Compose 配置一致，避免 Testcontainers KafkaContainer 对 advertised.listeners
+     * 的非路由地址校验冲突。
+     */
     @Container
-    static final KafkaContainer KAFKA =
-            new KafkaContainer(
-                    DockerImageName.parse(
-                            "apache/kafka:3.9.0@sha256:fbc7d7c428e3755cf36518d4976596002477e4c052d1f80b5b9eafd06d0fff2f"));
+    static final GenericContainer<?> KAFKA =
+            new GenericContainer<>(
+                            DockerImageName.parse(
+                                    "apache/kafka:3.9.0@sha256:fbc7d7c428e3755cf36518d4976596002477e4c052d1f80b5b9eafd06d0fff2f"))
+                    .withExposedPorts(9092)
+                    .withEnv("KAFKA_NODE_ID", "1")
+                    .withEnv("KAFKA_PROCESS_ROLES", "broker,controller")
+                    .withEnv(
+                            "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP",
+                            "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT")
+                    .withEnv("KAFKA_CONTROLLER_LISTENER_NAMES", "CONTROLLER")
+                    .withEnv("KAFKA_CONTROLLER_QUORUM_VOTERS", "1@localhost:9093")
+                    .withEnv("KAFKA_LISTENERS", "PLAINTEXT://:9092,CONTROLLER://:9093")
+                    .withEnv("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092")
+                    .withEnv("KAFKA_INTER_BROKER_LISTENER_NAME", "PLAINTEXT")
+                    .withEnv("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
+                    .withEnv("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "1")
+                    .withEnv("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "1")
+                    .withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false")
+                    .waitingFor(
+                            org.testcontainers.containers.wait.strategy.Wait.forLogMessage(
+                                            ".*Transition from STARTING to STARTED.*", 1)
+                                    .withStartupTimeout(java.time.Duration.ofMinutes(3)));
 
     /** W1 Redis 只验证缓存协议可用，不写入业务事实。 */
     @Container
@@ -68,7 +90,7 @@ class MiddlewareSmokeIntegrationTest {
                         AdminClient.create(
                                 Map.of(
                                         AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
-                                        KAFKA.getBootstrapServers()))) {
+                                        KAFKA.getHost() + ":" + KAFKA.getMappedPort(9092)))) {
             assertThat(resultSet.next()).isTrue();
             assertThat(resultSet.getInt(1)).isEqualTo(1);
             assertThat(adminClient.describeCluster().clusterId().get()).isNotBlank();
