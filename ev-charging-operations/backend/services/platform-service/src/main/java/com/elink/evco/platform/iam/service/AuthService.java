@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -343,6 +344,16 @@ public class AuthService {
         AuthSession session = sessionMapper.selectById(sessionId);
         if (session == null || !AuthSession.STATUS_ACTIVE.equals(session.getStatus())) {
             throw new BusinessException(PlatformErrorCode.RESOURCE_NOT_FOUND, "会话不存在或已失效");
+        }
+        if (!operator.isPlatformSuperAdmin()) {
+            // 跨租户防护（W2-D-14 IDOR）：非平台超管只能撤销本租户用户的会话；
+            // 归属不符时与不存在同样返回 RESOURCE_NOT_FOUND，不暴露其他租户会话存在性。
+            IamUser target = userMapper.selectById(session.getUserId());
+            if (target == null
+                    || target.getDeletedAt() != null
+                    || !Objects.equals(target.getTenantId(), operator.tenantId())) {
+                throw new BusinessException(PlatformErrorCode.RESOURCE_NOT_FOUND, "会话不存在或已失效");
+            }
         }
         sessionService.revokeSession(sessionId);
         permissionService.evict(session.getUserId());

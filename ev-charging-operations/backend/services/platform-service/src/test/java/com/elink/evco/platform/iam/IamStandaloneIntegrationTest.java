@@ -1,8 +1,10 @@
 package com.elink.evco.platform.iam;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.elink.evco.platform.iam.entity.AuthSession;
 import com.elink.evco.platform.iam.entity.IamRole;
 import com.elink.evco.platform.iam.entity.IamUser;
+import com.elink.evco.platform.iam.mapper.AuthSessionMapper;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -49,8 +52,15 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
     /** 隔离租户用户 ID（租户隔离夹具）。 */
     private String otherTenantUserId;
 
+    /** 隔离租户写操作者登录响应（跨租户撤销攻击者夹具）。 */
+    private Map<?, ?> otherAdminToken;
+
+    /** 会话数据访问（撤销用例夹具）。 */
+    @Autowired private AuthSessionMapper sessionMapper;
+
     /**
-     * 种子账号：写操作者（读+写+角色读）、只读操作者、隔离租户用户与跨租户角色。
+     * 种子账号：写操作者（读+写+角色读）、只读操作者、隔离租户用户、
+     * 隔离租户写操作者（跨租户撤销攻击者）与跨租户角色。
      */
     @BeforeAll
     void seedAccounts() {
@@ -60,6 +70,8 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
         IamUser otherTenant =
                 seedUser("sa_other", IamUser.TYPE_NORMAL, OTHER_TENANT_ID, List.of(PERM_IAM_USER_READ));
         otherTenantUserId = String.valueOf(otherTenant.getId());
+        seedUser("sa_other_admin", IamUser.TYPE_NORMAL, OTHER_TENANT_ID,
+                List.of(PERM_IAM_USER_READ, PERM_IAM_USER_WRITE));
 
         IamRole writerRole =
                 roleMapper.selectOne(
@@ -76,6 +88,7 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
 
         writerToken = login("sa_writer", SEED_PASSWORD, SYSTEM_TENANT_ID);
         readerToken = login("sa_reader", SEED_PASSWORD, SYSTEM_TENANT_ID);
+        otherAdminToken = login("sa_other_admin", SEED_PASSWORD, OTHER_TENANT_ID);
     }
 
     /** 验证码错误统一按认证失败拒绝，不进入口令校验。 */
@@ -227,6 +240,45 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
                 exchange(HttpMethod.GET, "/api/v1/iam/users/" + otherTenantUserId, writerToken, null);
         assertEquals(404, response.getStatusCode().value());
         assertEquals("IAM_USER_NOT_FOUND", codeOf(response));
+    }
+
+    /**
+     * 会话撤销租户隔离（W2-D-14 IDOR）：持 iam_user:write 的他租户操作者
+     * 撤销本租户会话返回 RESOURCE_NOT_FOUND（不暴露存在性）且会话不受影响；
+     * 本租户操作者撤销成功且受害者令牌立即失效。
+     */
+    @Test
+    @DisplayName("会话：跨租户撤销被拒，本租户撤销可用")
+    void revokeSessionScopedToTenant() {
+        Map<?, ?> victimToken = login("sa_reader", SEED_PASSWORD, SYSTEM_TENANT_ID);
+        long victimUserId = Long.parseLong((String) victimToken.get("userId"));
+        AuthSession session =
+                sessionMapper.selectOne(
+                        new LambdaQueryWrapper<AuthSession>()
+                                .eq(AuthSession::getUserId, victimUserId)
+                                .eq(AuthSession::getStatus, AuthSession.STATUS_ACTIVE)
+                                .orderByDesc(AuthSession::getId)
+                                .last("limit 1"));
+        assertNotNull(session, "受害者应存在活跃会话");
+
+        ResponseEntity<Map> cross =
+                exchange(HttpMethod.POST, "/api/v1/auth/revoke", otherAdminToken,
+                        Map.of("sessionId", String.valueOf(session.getId()), "reason", "越权尝试"));
+        assertEquals(404, cross.getStatusCode().value());
+        assertEquals("RESOURCE_NOT_FOUND", codeOf(cross));
+
+        ResponseEntity<Map> stillValid =
+                exchange(HttpMethod.GET, "/api/v1/auth/profile", victimToken, null);
+        assertEquals(200, stillValid.getStatusCode().value(), "越权尝试不得影响会话可用性");
+
+        ResponseEntity<Map> revoke =
+                exchange(HttpMethod.POST, "/api/v1/auth/revoke", writerToken,
+                        Map.of("sessionId", String.valueOf(session.getId()), "reason", "测试强制下线"));
+        assertEquals(200, revoke.getStatusCode().value());
+
+        ResponseEntity<Map> after =
+                exchange(HttpMethod.GET, "/api/v1/auth/profile", victimToken, null);
+        assertEquals(401, after.getStatusCode().value(), "本租户撤销后受害者令牌应立即失效");
     }
 
     /** 乐观锁：过期版本编辑返回 VERSION_CONFLICT。 */
