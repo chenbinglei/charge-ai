@@ -1,0 +1,257 @@
+openapi: 3.1.0
+info:
+  title: EVCO IAM 用户与角色 API
+  version: 1.0.0
+  description: |
+    P1/P2 管理端 IAM 管理用户与角色绑定的 OpenAPI 契约。
+    M1 个人充电用户不配置页面或功能角色。
+    引用 platform-foundation-v1.yaml 的公共组件。
+    本文件是设计草案，不是已发布运行时 API。
+paths:
+  /api/v1/iam/users:
+    get:
+      summary: 分页查询管理用户
+      operationId: pageIamUsers
+      parameters:
+        - name: username
+          in: query
+          schema: { type: string }
+        - name: displayName
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, locked, disabled] }
+        - name: roleId
+          in: query
+          schema: { type: integer }
+        - name: pageNo
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: 分页查询成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: './platform-foundation-v1.yaml#/components/schemas/PageResponse'
+    post:
+      summary: 新增管理用户并绑定初始角色
+      operationId: createIamUser
+      parameters:
+        - $ref: './platform-foundation-v1.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '200':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailVO'
+        '409':
+          description: 用户名重复或幂等冲突
+  /api/v1/iam/users/{userId}:
+    get:
+      summary: 查询单一管理用户
+      operationId: getIamUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailVO'
+        '404':
+          description: 用户不存在或不可见
+    put:
+      summary: 编辑管理用户资料
+      operationId: updateIamUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: 更新成功
+        '409':
+          description: 版本冲突
+    delete:
+      summary: 逻辑删除管理用户
+      operationId: deleteIamUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: version
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 删除成功
+        '409':
+          description: 版本冲突
+  /api/v1/iam/users/{userId}/roles:
+    put:
+      summary: 以完整角色集合替换绑定
+      operationId: replaceIamUserRoles
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceUserRolesRequest'
+      responses:
+        '200':
+          description: 角色替换成功
+        '403':
+          description: 越权授予
+  /api/v1/iam/users/{userId}/status:
+    patch:
+      summary: 启用、停用或锁定用户
+      operationId: changeIamUserStatus
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeUserStatusRequest'
+      responses:
+        '200':
+          description: 状态迁移成功
+        '409':
+          description: 最后管理员保护或状态冲突
+  /api/v1/iam/roles/options:
+    get:
+      summary: 查询可授予角色选项
+      operationId: listIamRoleOptions
+      responses:
+        '200':
+          description: 查询成功
+components:
+  schemas:
+    CreateUserRequest:
+      type: object
+      additionalProperties: false
+      required: [username, displayName, roleIds]
+      properties:
+        username:
+          type: string
+          description: 管理用户登录名；租户范围内唯一。
+        displayName:
+          type: string
+          description: 后台展示姓名。
+        roleIds:
+          type: array
+          items: { type: integer }
+          minItems: 1
+          description: 初始绑定角色标识集合。
+        tenantId:
+          type: integer
+          description: 所属租户；平台管理员可省略。
+    UpdateUserRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        displayName:
+          type: string
+        version:
+          type: integer
+          description: 乐观锁版本。
+    ReplaceUserRolesRequest:
+      type: object
+      additionalProperties: false
+      required: [roleIds]
+      properties:
+        roleIds:
+          type: array
+          items: { type: integer }
+          description: 替换后的完整角色集合。
+    ChangeUserStatusRequest:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [active, locked, disabled]
+          description: 目标账户状态；迁移以 IAM 状态机为准。
+    UserListVO:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        displayName: { type: string }
+        status:
+          type: string
+          enum: [active, locked, disabled]
+        roleNames:
+          type: array
+          items: { type: string }
+        tenantId: { type: integer }
+        createdAt: { type: string, format: date-time }
+    UserDetailVO:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        displayName: { type: string }
+        status:
+          type: string
+          enum: [active, locked, disabled]
+        version: { type: integer }
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleOptionVO'
+        tenantId: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    RoleOptionVO:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        scope:
+          type: string
+          enum: [platform, tenant]
+        description: { type: string }

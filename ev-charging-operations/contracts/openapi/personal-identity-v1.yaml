@@ -1,0 +1,208 @@
+openapi: 3.1.0
+info:
+  title: EVCO 个人用户主档与渠道身份映射 API
+  version: 1.0.0
+  description: |
+    个人用户主档与渠道身份映射的 OpenAPI 契约。
+    L3 字段（外部主体原文、手机号）加密存储且日志只留脱敏值。
+    M1 不提供自助绑定/解绑/账户合并。
+    引用 platform-foundation-v1.yaml 的公共组件。
+paths:
+  /api/v1/personal-users:
+    get:
+      summary: 分页查询个人用户主档
+      operationId: pagePersonalUsers
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending_verification, active, blocked, conflict, manual_review]
+        - name: channelType
+          in: query
+          schema: { type: string, enum: [wechat, alipay] }
+        - name: source
+          in: query
+          schema: { type: string }
+        - name: pageNo
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: 分页查询成功
+    post:
+      summary: 渠道登录幂等创建个人用户主档
+      operationId: createPersonalUser
+      parameters:
+        - $ref: './platform-foundation-v1.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePersonalUserRequest'
+      responses:
+        '200':
+          description: 创建成功或返回已有主档
+        '409':
+          description: 渠道身份冲突
+  /api/v1/personal-users/{personalUserId}:
+    get:
+      summary: 查询单一个人用户主档
+      operationId: getPersonalUser
+      parameters:
+        - name: personalUserId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 查询成功
+        '404':
+          description: 主档不存在
+    put:
+      summary: 编辑个人用户主档资料
+      operationId: updatePersonalUser
+      parameters:
+        - name: personalUserId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePersonalUserRequest'
+      responses:
+        '200':
+          description: 更新成功
+        '409':
+          description: 版本冲突
+  /api/v1/personal-users/{personalUserId}/conflicts:
+    get:
+      summary: 查询个人用户的渠道身份冲突列表
+      operationId: listPersonalUserConflicts
+      parameters:
+        - name: personalUserId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 查询成功
+  /api/v1/identity-conflicts/{conflictCaseId}:
+    patch:
+      summary: 人工处置渠道身份冲突
+      operationId: resolveIdentityConflict
+      parameters:
+        - name: conflictCaseId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolveConflictRequest'
+      responses:
+        '200':
+          description: 处置成功
+        '409':
+          description: 状态冲突
+components:
+  schemas:
+    CreatePersonalUserRequest:
+      type: object
+      additionalProperties: false
+      required: [channelType, applicationInstanceId, externalSubjectFingerprint]
+      properties:
+        channelType:
+          type: string
+          enum: [wechat, alipay]
+        applicationInstanceId:
+          type: string
+        externalSubjectFingerprint:
+          type: string
+          description: 由受控密钥服务生成；不得使用可被枚举的裸哈希。
+        normalizedPhoneFingerprint:
+          type: string
+          description: 经过验证的规范化手机号指纹；L3 加密存储。
+        privacyConsentVersion:
+          type: string
+          description: 隐私告知同意版本。
+        source:
+          type: string
+    UpdatePersonalUserRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        privacyConsentVersion:
+          type: string
+        version:
+          type: integer
+    ResolveConflictRequest:
+      type: object
+      additionalProperties: false
+      required: [resolution]
+      properties:
+        resolution:
+          type: string
+          enum: [resolved_merge, resolved_block, rejected]
+        reason:
+          type: string
+    PersonalUserListVO:
+      type: object
+      properties:
+        id: { type: integer }
+        status:
+          type: string
+          enum: [pending_verification, active, blocked, conflict, manual_review]
+        channelType:
+          type: string
+          enum: [wechat, alipay]
+        source: { type: string }
+        createdAt: { type: string, format: date-time }
+    PersonalUserDetailVO:
+      type: object
+      properties:
+        id: { type: integer }
+        status:
+          type: string
+          enum: [pending_verification, active, blocked, conflict, manual_review]
+        channelType:
+          type: string
+          enum: [wechat, alipay]
+        applicationInstanceId: { type: string }
+        externalSubjectFingerprintMasked:
+          type: string
+          description: 脱敏后的外部主体指纹。
+        normalizedPhoneFingerprintMasked:
+          type: string
+          description: 脱敏后的手机号指纹。
+        privacyConsentVersion: { type: string }
+        source: { type: string }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    IdentityConflictCaseVO:
+      type: object
+      properties:
+        id: { type: integer }
+        personalUserId: { type: integer }
+        channelType:
+          type: string
+          enum: [wechat, alipay]
+        status:
+          type: string
+          enum: [pending, resolved_merge, resolved_block, rejected]
+        reason: { type: string }
+        createdAt: { type: string, format: date-time }
+        resolvedAt: { type: string, format: date-time }

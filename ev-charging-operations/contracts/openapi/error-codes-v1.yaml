@@ -18,6 +18,18 @@ codes:
     httpStatus: 403
     retryable: false
     description: 无页面、数据或业务操作权限。
+  DEPLOYMENT_MODE_READONLY:
+    httpStatus: 403
+    retryable: false
+    description: IOT 协同部署模式下，该数据域由 IOT 维护，平台侧只读，禁止写操作。
+  SSO_TICKET_INVALID:
+    httpStatus: 401
+    retryable: false
+    description: SSO 免登录票据无效、已使用或已过期。
+  SSO_USER_NOT_FOUND:
+    httpStatus: 403
+    retryable: false
+    description: SSO 免登录用户未由 IOT 推送到平台或当前不可用，需先在 IOT 侧创建并推送。
   RESOURCE_NOT_FOUND:
     httpStatus: 404
     retryable: false

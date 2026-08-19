@@ -1,0 +1,307 @@
+openapi: 3.1.0
+info:
+  title: EVCO P1 渠道/支付/结算配置 API
+  version: 1.0.0
+  description: |
+    P1 小程序管理、支付渠道与路由、结算渠道配置的 OpenAPI 契约。
+    银联/银盛等条件渠道默认关闭态。
+    真实支付/退款交易在 W6 资金批次、C2-W/C2-A 独立门禁。
+    引用 platform-foundation-v1.yaml 的公共组件。
+paths:
+  /api/v1/mini-program-apps:
+    get:
+      summary: 分页查询小程序应用
+      operationId: pageMiniProgramApps
+      parameters:
+        - name: subjectType
+          in: query
+          schema: { type: string }
+        - name: environment
+          in: query
+          schema: { type: string, enum: [production, staging, testing] }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, testing, closed, n_a]
+        - name: pageNo
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: 分页查询成功
+    post:
+      summary: 新增小程序应用档案
+      operationId: createMiniProgramApp
+      parameters:
+        - $ref: './platform-foundation-v1.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMiniProgramAppRequest'
+      responses:
+        '200':
+          description: 创建成功
+        '409':
+          description: AppID 重复
+  /api/v1/mini-program-apps/{appId}:
+    put:
+      summary: 编辑小程序应用档案
+      operationId: updateMiniProgramApp
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMiniProgramAppRequest'
+      responses:
+        '200':
+          description: 更新成功
+  /api/v1/payment-channels:
+    get:
+      summary: 分页查询支付渠道
+      operationId: pagePaymentChannels
+      parameters:
+        - name: channelType
+          in: query
+          schema:
+            type: string
+            enum: [wechat, alipay, unionpay, yinteng]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, testing, closed, n_a]
+        - name: pageNo
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: 分页查询成功
+    post:
+      summary: 新增支付渠道配置
+      operationId: createPaymentChannel
+      parameters:
+        - $ref: './platform-foundation-v1.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentChannelRequest'
+      responses:
+        '200':
+          description: 创建成功
+  /api/v1/settlement-channels:
+    get:
+      summary: 分页查询结算渠道
+      operationId: pageSettlementChannels
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, testing, closed, n_a]
+        - name: pageNo
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: 分页查询成功
+    post:
+      summary: 新增结算渠道配置
+      operationId: createSettlementChannel
+      parameters:
+        - $ref: './platform-foundation-v1.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSettlementChannelRequest'
+      responses:
+        '200':
+          description: 创建成功
+  /api/v1/platform-settings:
+    get:
+      summary: 分页查询基础参数、字典、特征开关、审批流模板、操作日志
+      operationId: pagePlatformSettings
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [basic_param, dictionary, feature_switch, approval_flow, operation_log]
+        - name: pageNo
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: 分页查询成功
+components:
+  schemas:
+    CreateMiniProgramAppRequest:
+      type: object
+      additionalProperties: false
+      required: [appId, subjectType, environment]
+      properties:
+        appId:
+          type: string
+          description: 小程序 AppID；唯一。
+        subjectType:
+          type: string
+          description: 主体/类型。
+        environment:
+          type: string
+          enum: [production, staging, testing]
+        appName:
+          type: string
+        credentialRef:
+          type: string
+          description: 受控密钥引用；不返回原文。
+    UpdateMiniProgramAppRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        appName:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, testing, closed, n_a]
+        version:
+          type: integer
+        releaseVersion:
+          type: string
+          description: 版本发布。
+        grayRollback:
+          type: string
+          description: 灰度/回滚策略。
+    CreatePaymentChannelRequest:
+      type: object
+      additionalProperties: false
+      required: [channelType, channelName]
+      properties:
+        channelType:
+          type: string
+          enum: [wechat, alipay, unionpay, yinteng]
+        channelName:
+          type: string
+        merchantRef:
+          type: string
+          description: 商户引用。
+        appIdBinding:
+          type: string
+          description: AppID 绑定状态。
+        credentialRef:
+          type: string
+          description: 凭据受控录入引用。
+        environment:
+          type: string
+          enum: [production, staging, testing]
+    CreateSettlementChannelRequest:
+      type: object
+      additionalProperties: false
+      required: [channelName]
+      properties:
+        channelName:
+          type: string
+        bankAccount:
+          type: string
+          description: 银行账户。
+        reconciliationCycle:
+          type: string
+          description: 对账周期。
+        deductionMethod:
+          type: string
+          description: 扣款方式。
+        limitAmount:
+          type: integer
+          description: 限额（整数最小单位）。
+        riskControlRules:
+          type: object
+          description: 风控规则 JSON。
+        healthStatus:
+          type: string
+          enum: [healthy, degraded, down]
+          description: 执行健康度。
+    MiniProgramAppListVO:
+      type: object
+      properties:
+        id: { type: integer }
+        appId: { type: string }
+        subjectType: { type: string }
+        appName: { type: string }
+        environment:
+          type: string
+          enum: [production, staging, testing]
+        status:
+          type: string
+          enum: [active, inactive, testing, closed, n_a]
+        createdAt: { type: string, format: date-time }
+    PaymentChannelListVO:
+      type: object
+      properties:
+        id: { type: integer }
+        channelType:
+          type: string
+          enum: [wechat, alipay, unionpay, yinteng]
+        channelName: { type: string }
+        status:
+          type: string
+          enum: [active, inactive, testing, closed, n_a]
+        healthStatus:
+          type: string
+          enum: [healthy, degraded, down]
+        createdAt: { type: string, format: date-time }
+    SettlementChannelListVO:
+      type: object
+      properties:
+        id: { type: integer }
+        channelName: { type: string }
+        status:
+          type: string
+          enum: [active, inactive, testing, closed, n_a]
+        limitAmount: { type: integer }
+        healthStatus:
+          type: string
+          enum: [healthy, degraded, down]
+        createdAt: { type: string, format: date-time }
+    PlatformSettingListVO:
+      type: object
+      properties:
+        id: { type: integer }
+        category:
+          type: string
+          enum: [basic_param, dictionary, feature_switch, approval_flow, operation_log]
+        key: { type: string }
+        value: { type: string }
+        traceId: { type: string }
+        createdAt: { type: string, format: date-time }
