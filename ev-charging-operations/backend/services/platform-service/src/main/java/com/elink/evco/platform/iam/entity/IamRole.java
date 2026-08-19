@@ -9,9 +9,7 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * IAM 角色（iam_role）：平台级角色归属系统租户；IOT 协同模式由 IOT 推送维护。
- */
+/** IAM 角色（iam_role）：平台级角色归属系统租户；IOT 协同模式由 IOT 推送维护。 */
 @Setter
 @Getter
 @TableName("iam_role")

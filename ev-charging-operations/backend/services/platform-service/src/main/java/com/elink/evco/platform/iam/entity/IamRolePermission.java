@@ -6,9 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * 角色-权限直接绑定（iam_role_permission）：纯关联表，禁用通过解绑实现。
- */
+/** 角色-权限直接绑定（iam_role_permission）：纯关联表，禁用通过解绑实现。 */
 @Setter
 @Getter
 @TableName("iam_role_permission")

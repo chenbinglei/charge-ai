@@ -9,10 +9,7 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * 认证会话（auth_session）：密码登录与 SSO 免登录共用；短生命周期运行数据，
- * 无逻辑删除，生命周期由 status 表达。
- */
+/** 认证会话（auth_session）：密码登录与 SSO 免登录共用；短生命周期运行数据， 无逻辑删除，生命周期由 status 表达。 */
 @Setter
 @Getter
 @TableName("auth_session")

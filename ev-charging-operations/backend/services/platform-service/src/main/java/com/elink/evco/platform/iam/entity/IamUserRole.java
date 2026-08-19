@@ -6,9 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * 用户-角色绑定（iam_user_role）：多对多纯关联表；绑定变更须写审计。
- */
+/** 用户-角色绑定（iam_user_role）：多对多纯关联表；绑定变更须写审计。 */
 @Setter
 @Getter
 @TableName("iam_user_role")

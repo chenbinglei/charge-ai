@@ -1,5 +1,11 @@
 package com.elink.evco.platform.iam;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.elink.evco.platform.iam.entity.AuthSession;
 import com.elink.evco.platform.iam.entity.IamRole;
@@ -15,20 +21,13 @@ import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 /**
- * 独立部署模式（STANDALONE）IAM 集成测试：登录/验证码、档案与菜单推导、
- * 用户增删改查、角色越权、租户隔离、乐观锁、状态机、令牌轮换/登出、
- * 失败锁定与幂等重放；全部经真实 HTTP + 真实 MySQL/Redis 容器验证。
+ * 独立部署模式（STANDALONE）IAM 集成测试：登录/验证码、档案与菜单推导、 用户增删改查、角色越权、租户隔离、乐观锁、状态机、令牌轮换/登出、 失败锁定与幂等重放；全部经真实 HTTP
+ * + 真实 MySQL/Redis 容器验证。
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -58,19 +57,26 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
     /** 会话数据访问（撤销用例夹具）。 */
     @Autowired private AuthSessionMapper sessionMapper;
 
-    /**
-     * 种子账号：写操作者（读+写+角色读）、只读操作者、隔离租户用户、
-     * 隔离租户写操作者（跨租户撤销攻击者）与跨租户角色。
-     */
+    /** 种子账号：写操作者（读+写+角色读）、只读操作者、隔离租户用户、 隔离租户写操作者（跨租户撤销攻击者）与跨租户角色。 */
     @BeforeAll
     void seedAccounts() {
-        seedUser("sa_writer", IamUser.TYPE_NORMAL, SYSTEM_TENANT_ID,
+        seedUser(
+                "sa_writer",
+                IamUser.TYPE_NORMAL,
+                SYSTEM_TENANT_ID,
                 List.of(PERM_IAM_USER_READ, PERM_IAM_USER_WRITE, PERM_IAM_ROLE_READ));
         seedUser("sa_reader", IamUser.TYPE_NORMAL, SYSTEM_TENANT_ID, List.of(PERM_IAM_USER_READ));
         IamUser otherTenant =
-                seedUser("sa_other", IamUser.TYPE_NORMAL, OTHER_TENANT_ID, List.of(PERM_IAM_USER_READ));
+                seedUser(
+                        "sa_other",
+                        IamUser.TYPE_NORMAL,
+                        OTHER_TENANT_ID,
+                        List.of(PERM_IAM_USER_READ));
         otherTenantUserId = String.valueOf(otherTenant.getId());
-        seedUser("sa_other_admin", IamUser.TYPE_NORMAL, OTHER_TENANT_ID,
+        seedUser(
+                "sa_other_admin",
+                IamUser.TYPE_NORMAL,
+                OTHER_TENANT_ID,
                 List.of(PERM_IAM_USER_READ, PERM_IAM_USER_WRITE));
 
         IamRole writerRole =
@@ -147,8 +153,13 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
     @DisplayName("用户：创建返回一次性初始密码")
     void createUserReturnsOneTimeInitialPassword() {
         Map<String, Object> body =
-                Map.of("username", "sa_created_01", "displayName", "创建用户01",
-                        "roleIds", List.of(writerRoleId));
+                Map.of(
+                        "username",
+                        "sa_created_01",
+                        "displayName",
+                        "创建用户01",
+                        "roleIds",
+                        List.of(writerRoleId));
         ResponseEntity<Map> response =
                 exchange(HttpMethod.POST, "/api/v1/iam/users", writerToken, body);
         assertEquals(200, response.getStatusCode().value());
@@ -158,7 +169,8 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
 
         ResponseEntity<Map> detail =
                 exchange(HttpMethod.GET, "/api/v1/iam/users/" + userId, writerToken, null);
-        assertNull(((Map<?, ?>) detail.getBody().get("data")).get("initialPassword"),
+        assertNull(
+                ((Map<?, ?>) detail.getBody().get("data")).get("initialPassword"),
                 "非创建场景不得再次返回初始密码");
 
         Map<?, ?> createdLogin =
@@ -171,14 +183,27 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
     @DisplayName("用户：创建幂等重放")
     void createUserIdempotentReplay() {
         Map<String, Object> body =
-                Map.of("username", "sa_idem_01", "displayName", "幂等用户",
-                        "roleIds", List.of(writerRoleId));
+                Map.of(
+                        "username",
+                        "sa_idem_01",
+                        "displayName",
+                        "幂等用户",
+                        "roleIds",
+                        List.of(writerRoleId));
         HttpHeaders headers = bearer(writerToken);
         headers.set("X-Idempotency-Key", "sa-idem-key-001");
         ResponseEntity<Map> first =
-                rest.exchange("/api/v1/iam/users", HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+                rest.exchange(
+                        "/api/v1/iam/users",
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        Map.class);
         ResponseEntity<Map> second =
-                rest.exchange("/api/v1/iam/users", HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+                rest.exchange(
+                        "/api/v1/iam/users",
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        Map.class);
         assertEquals(200, first.getStatusCode().value());
         assertEquals(200, second.getStatusCode().value());
         Map<?, ?> firstData = (Map<?, ?>) first.getBody().get("data");
@@ -186,7 +211,8 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
         assertEquals(firstData.get("id"), secondData.get("id"), "幂等重放应返回同一用户");
 
         ResponseEntity<Map> page =
-                exchange(HttpMethod.GET, "/api/v1/iam/users?username=sa_idem_01", writerToken, null);
+                exchange(
+                        HttpMethod.GET, "/api/v1/iam/users?username=sa_idem_01", writerToken, null);
         Map<?, ?> pageData = (Map<?, ?>) page.getBody().get("data");
         assertEquals(1, pageData.get("total"), "幂等重放不得产生重复用户");
     }
@@ -196,8 +222,13 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
     @DisplayName("权限：只读操作者创建用户被拒")
     void createUserWithoutWritePermissionForbidden() {
         Map<String, Object> body =
-                Map.of("username", "sa_forbidden_01", "displayName", "越权用户",
-                        "roleIds", List.of(writerRoleId));
+                Map.of(
+                        "username",
+                        "sa_forbidden_01",
+                        "displayName",
+                        "越权用户",
+                        "roleIds",
+                        List.of(writerRoleId));
         ResponseEntity<Map> response =
                 exchange(HttpMethod.POST, "/api/v1/iam/users", readerToken, body);
         assertEquals(403, response.getStatusCode().value());
@@ -209,10 +240,18 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
     @DisplayName("用户：重名创建被拒")
     void duplicateUsernameRejected() {
         Map<String, Object> body =
-                Map.of("username", "sa_dup_01", "displayName", "重复用户",
-                        "roleIds", List.of(writerRoleId));
-        assertEquals(200, exchange(HttpMethod.POST, "/api/v1/iam/users", writerToken, body)
-                .getStatusCode().value());
+                Map.of(
+                        "username",
+                        "sa_dup_01",
+                        "displayName",
+                        "重复用户",
+                        "roleIds",
+                        List.of(writerRoleId));
+        assertEquals(
+                200,
+                exchange(HttpMethod.POST, "/api/v1/iam/users", writerToken, body)
+                        .getStatusCode()
+                        .value());
         ResponseEntity<Map> second =
                 exchange(HttpMethod.POST, "/api/v1/iam/users", writerToken, body);
         assertEquals(409, second.getStatusCode().value());
@@ -224,8 +263,13 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
     @DisplayName("用户：跨租户角色授予被拒")
     void crossTenantRoleRejected() {
         Map<String, Object> body =
-                Map.of("username", "sa_foreign_role_01", "displayName", "越权角色用户",
-                        "roleIds", List.of(foreignRoleId));
+                Map.of(
+                        "username",
+                        "sa_foreign_role_01",
+                        "displayName",
+                        "越权角色用户",
+                        "roleIds",
+                        List.of(foreignRoleId));
         ResponseEntity<Map> response =
                 exchange(HttpMethod.POST, "/api/v1/iam/users", writerToken, body);
         assertEquals(403, response.getStatusCode().value());
@@ -237,14 +281,17 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
     @DisplayName("用户：跨租户用户不可见")
     void crossTenantUserInvisible() {
         ResponseEntity<Map> response =
-                exchange(HttpMethod.GET, "/api/v1/iam/users/" + otherTenantUserId, writerToken, null);
+                exchange(
+                        HttpMethod.GET,
+                        "/api/v1/iam/users/" + otherTenantUserId,
+                        writerToken,
+                        null);
         assertEquals(404, response.getStatusCode().value());
         assertEquals("IAM_USER_NOT_FOUND", codeOf(response));
     }
 
     /**
-     * 会话撤销租户隔离（W2-D-14 IDOR）：持 iam_user:write 的他租户操作者
-     * 撤销本租户会话返回 RESOURCE_NOT_FOUND（不暴露存在性）且会话不受影响；
+     * 会话撤销租户隔离（W2-D-14 IDOR）：持 iam_user:write 的他租户操作者 撤销本租户会话返回 RESOURCE_NOT_FOUND（不暴露存在性）且会话不受影响；
      * 本租户操作者撤销成功且受害者令牌立即失效。
      */
     @Test
@@ -262,7 +309,10 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
         assertNotNull(session, "受害者应存在活跃会话");
 
         ResponseEntity<Map> cross =
-                exchange(HttpMethod.POST, "/api/v1/auth/revoke", otherAdminToken,
+                exchange(
+                        HttpMethod.POST,
+                        "/api/v1/auth/revoke",
+                        otherAdminToken,
                         Map.of("sessionId", String.valueOf(session.getId()), "reason", "越权尝试"));
         assertEquals(404, cross.getStatusCode().value());
         assertEquals("RESOURCE_NOT_FOUND", codeOf(cross));
@@ -272,7 +322,10 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
         assertEquals(200, stillValid.getStatusCode().value(), "越权尝试不得影响会话可用性");
 
         ResponseEntity<Map> revoke =
-                exchange(HttpMethod.POST, "/api/v1/auth/revoke", writerToken,
+                exchange(
+                        HttpMethod.POST,
+                        "/api/v1/auth/revoke",
+                        writerToken,
                         Map.of("sessionId", String.valueOf(session.getId()), "reason", "测试强制下线"));
         assertEquals(200, revoke.getStatusCode().value());
 
@@ -287,17 +340,25 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
     void updateUserWithStaleVersionConflicts() {
         String userId = createUserViaApi("sa_version_01", "版本用户");
         Map<?, ?> detail =
-                (Map<?, ?>) exchange(HttpMethod.GET, "/api/v1/iam/users/" + userId, writerToken, null)
-                        .getBody().get("data");
+                (Map<?, ?>)
+                        exchange(HttpMethod.GET, "/api/v1/iam/users/" + userId, writerToken, null)
+                                .getBody()
+                                .get("data");
         int version = ((Number) detail.get("version")).intValue();
 
         ResponseEntity<Map> first =
-                exchange(HttpMethod.PUT, "/api/v1/iam/users/" + userId, writerToken,
+                exchange(
+                        HttpMethod.PUT,
+                        "/api/v1/iam/users/" + userId,
+                        writerToken,
                         Map.of("displayName", "版本用户-新名", "version", version));
         assertEquals(200, first.getStatusCode().value());
 
         ResponseEntity<Map> stale =
-                exchange(HttpMethod.PUT, "/api/v1/iam/users/" + userId, writerToken,
+                exchange(
+                        HttpMethod.PUT,
+                        "/api/v1/iam/users/" + userId,
+                        writerToken,
                         Map.of("displayName", "版本用户-再改名", "version", version));
         assertEquals(409, stale.getStatusCode().value());
         assertEquals("VERSION_CONFLICT", codeOf(stale));
@@ -313,7 +374,10 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
         assertEquals("disabled", changeStatus(userId, "disabled"));
 
         ResponseEntity<Map> illegal =
-                exchange(HttpMethod.PATCH, "/api/v1/iam/users/" + userId + "/status", writerToken,
+                exchange(
+                        HttpMethod.PATCH,
+                        "/api/v1/iam/users/" + userId + "/status",
+                        writerToken,
                         Map.of("status", "locked"));
         assertEquals(409, illegal.getStatusCode().value());
         assertEquals("STATE_CONFLICT", codeOf(illegal));
@@ -327,13 +391,18 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
     void deleteUserSoftDeletesAndHides() {
         String userId = createUserViaApi("sa_delete_01", "删除用户");
         Map<?, ?> detail =
-                (Map<?, ?>) exchange(HttpMethod.GET, "/api/v1/iam/users/" + userId, writerToken, null)
-                        .getBody().get("data");
+                (Map<?, ?>)
+                        exchange(HttpMethod.GET, "/api/v1/iam/users/" + userId, writerToken, null)
+                                .getBody()
+                                .get("data");
         int version = ((Number) detail.get("version")).intValue();
 
         ResponseEntity<Map> deleted =
-                exchange(HttpMethod.DELETE, "/api/v1/iam/users/" + userId + "?version=" + version,
-                        writerToken, null);
+                exchange(
+                        HttpMethod.DELETE,
+                        "/api/v1/iam/users/" + userId + "?version=" + version,
+                        writerToken,
+                        null);
         assertEquals(200, deleted.getStatusCode().value());
 
         ResponseEntity<Map> after =
@@ -351,13 +420,67 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
         assertEquals(200, response.getStatusCode().value());
         List<?> options = (List<?>) response.getBody().get("data");
         assertFalse(options.isEmpty());
-        assertTrue(options.stream().noneMatch(option -> foreignRoleId
-                .equals(((Map<?, ?>) option).get("id"))), "不得出现跨租户角色");
+        assertTrue(
+                options.stream()
+                        .noneMatch(option -> foreignRoleId.equals(((Map<?, ?>) option).get("id"))),
+                "不得出现跨租户角色");
 
         ResponseEntity<Map> forbidden =
                 exchange(HttpMethod.GET, "/api/v1/iam/roles/options", readerToken, null);
         assertEquals(403, forbidden.getStatusCode().value());
         assertEquals("FORBIDDEN", codeOf(forbidden));
+    }
+
+    /** 角色替换乐观锁：过期版本替换返回 VERSION_CONFLICT 且绑定不变； 正确版本替换成功后版本自增。 */
+    @Test
+    @DisplayName("角色：替换乐观锁冲突与成功自增")
+    void replaceRolesWithStaleVersionConflicts() {
+        String userId = createUserViaApi("sa_role_replace_01", "角色替换用户");
+        Map<?, ?> detail =
+                (Map<?, ?>)
+                        exchange(HttpMethod.GET, "/api/v1/iam/users/" + userId, writerToken, null)
+                                .getBody()
+                                .get("data");
+        int version = ((Number) detail.get("version")).intValue();
+
+        // 第一次替换成功：版本自增。
+        ResponseEntity<Map> first =
+                exchange(
+                        HttpMethod.PUT,
+                        "/api/v1/iam/users/" + userId + "/roles",
+                        writerToken,
+                        Map.of("roleIds", List.of(writerRoleId), "version", version));
+        assertEquals(200, first.getStatusCode().value());
+        Map<?, ?> afterFirst =
+                (Map<?, ?>)
+                        exchange(HttpMethod.GET, "/api/v1/iam/users/" + userId, writerToken, null)
+                                .getBody()
+                                .get("data");
+        assertEquals(version + 1, ((Number) afterFirst.get("version")).intValue(), "替换成功后版本应自增");
+
+        // 持旧版本再替换：返回 VERSION_CONFLICT。
+        ResponseEntity<Map> stale =
+                exchange(
+                        HttpMethod.PUT,
+                        "/api/v1/iam/users/" + userId + "/roles",
+                        writerToken,
+                        Map.of("roleIds", List.of(), "version", version));
+        assertEquals(409, stale.getStatusCode().value());
+        assertEquals("VERSION_CONFLICT", codeOf(stale));
+
+        // 冲突后绑定保持第一次替换结果（未解绑）。
+        List<?> roles =
+                (List<?>)
+                        ((Map<?, ?>)
+                                        exchange(
+                                                        HttpMethod.GET,
+                                                        "/api/v1/iam/users/" + userId,
+                                                        writerToken,
+                                                        null)
+                                                .getBody()
+                                                .get("data"))
+                                .get("roles");
+        assertFalse(roles.isEmpty(), "冲突替换不得清空既有绑定");
     }
 
     /** refresh_token 一次性轮换：旧令牌重复使用返回 AUTH_REFRESH_TOKEN_USED。 */
@@ -366,15 +489,19 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
     void refreshTokenRotatesOnce() {
         Map<?, ?> data = login("sa_reader", SEED_PASSWORD, SYSTEM_TENANT_ID);
         ResponseEntity<Map> first =
-                rest.postForEntity("/api/v1/auth/refresh",
-                        Map.of("refreshToken", data.get("refreshToken")), Map.class);
+                rest.postForEntity(
+                        "/api/v1/auth/refresh",
+                        Map.of("refreshToken", data.get("refreshToken")),
+                        Map.class);
         assertEquals(200, first.getStatusCode().value());
         Map<?, ?> rotated = (Map<?, ?>) first.getBody().get("data");
         assertFalse(((String) rotated.get("accessToken")).isBlank());
 
         ResponseEntity<Map> replay =
-                rest.postForEntity("/api/v1/auth/refresh",
-                        Map.of("refreshToken", data.get("refreshToken")), Map.class);
+                rest.postForEntity(
+                        "/api/v1/auth/refresh",
+                        Map.of("refreshToken", data.get("refreshToken")),
+                        Map.class);
         assertEquals(401, replay.getStatusCode().value());
         assertEquals("AUTH_REFRESH_TOKEN_USED", codeOf(replay));
     }
@@ -385,12 +512,13 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
     void logoutRevokesSession() {
         Map<?, ?> data = login("sa_reader", SEED_PASSWORD, SYSTEM_TENANT_ID);
         ResponseEntity<Map> logout =
-                rest.postForEntity("/api/v1/auth/logout",
-                        Map.of("refreshToken", data.get("refreshToken")), Map.class);
+                rest.postForEntity(
+                        "/api/v1/auth/logout",
+                        Map.of("refreshToken", data.get("refreshToken")),
+                        Map.class);
         assertEquals(200, logout.getStatusCode().value());
 
-        ResponseEntity<Map> profile =
-                exchange(HttpMethod.GET, "/api/v1/auth/profile", data, null);
+        ResponseEntity<Map> profile = exchange(HttpMethod.GET, "/api/v1/auth/profile", data, null);
         assertEquals(401, profile.getStatusCode().value());
         assertEquals("AUTH_TOKEN_INVALID", codeOf(profile));
     }
@@ -424,7 +552,8 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
         assertEquals("FORBIDDEN", codeOf(pushResponse));
 
         ResponseEntity<Map> loginResponse =
-                rest.postForEntity("/api/v1/auth/sso/login", Map.of("ticket", "s".repeat(40)), Map.class);
+                rest.postForEntity(
+                        "/api/v1/auth/sso/login", Map.of("ticket", "s".repeat(40)), Map.class);
         assertEquals(403, loginResponse.getStatusCode().value());
         assertEquals("FORBIDDEN", codeOf(loginResponse));
     }
@@ -438,9 +567,17 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
      */
     private String createUserViaApi(String username, String displayName) {
         ResponseEntity<Map> response =
-                exchange(HttpMethod.POST, "/api/v1/iam/users", writerToken,
-                        Map.of("username", username, "displayName", displayName,
-                                "roleIds", List.of(writerRoleId)));
+                exchange(
+                        HttpMethod.POST,
+                        "/api/v1/iam/users",
+                        writerToken,
+                        Map.of(
+                                "username",
+                                username,
+                                "displayName",
+                                displayName,
+                                "roleIds",
+                                List.of(writerRoleId)));
         assertEquals(200, response.getStatusCode().value(), "夹具用户创建失败：" + response.getBody());
         return (String) ((Map<?, ?>) response.getBody().get("data")).get("id");
     }
@@ -454,7 +591,10 @@ class IamStandaloneIntegrationTest extends IamIntegrationSupport {
      */
     private String changeStatus(String userId, String status) {
         ResponseEntity<Map> response =
-                exchange(HttpMethod.PATCH, "/api/v1/iam/users/" + userId + "/status", writerToken,
+                exchange(
+                        HttpMethod.PATCH,
+                        "/api/v1/iam/users/" + userId + "/status",
+                        writerToken,
                         Map.of("status", status));
         assertEquals(200, response.getStatusCode().value(), "迁移到 " + status + " 应成功");
         return (String) ((Map<?, ?>) response.getBody().get("data")).get("status");

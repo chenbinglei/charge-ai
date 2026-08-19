@@ -9,9 +9,7 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * 刷新令牌（refresh_token）：原文不落库，仅存 SHA-256 摘要；一次性使用后轮换。
- */
+/** 刷新令牌（refresh_token）：原文不落库，仅存 SHA-256 摘要；一次性使用后轮换。 */
 @Setter
 @Getter
 @TableName("refresh_token")

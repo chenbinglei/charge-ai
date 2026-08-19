@@ -2,10 +2,6 @@ package com.elink.evco.platform.iam.controller;
 
 import com.elink.evco.kernel.api.ApiResponse;
 import com.elink.evco.kernel.api.PageResponse;
-import com.elink.evco.platform.common.security.AuthContextHolder;
-import com.elink.evco.platform.common.security.HasPermission;
-import com.elink.evco.platform.common.web.Ids;
-import com.elink.evco.platform.common.web.TraceIdHolder;
 import com.elink.evco.platform.iam.dto.ChangeUserStatusRequest;
 import com.elink.evco.platform.iam.dto.CreateUserRequest;
 import com.elink.evco.platform.iam.dto.ReplaceUserRolesRequest;
@@ -16,11 +12,11 @@ import com.elink.evco.platform.iam.vo.UserDetailVO;
 import com.elink.evco.platform.iam.vo.UserListVO;
 import com.elink.evco.platform.iam.vo.UserRoleBindingVO;
 import com.elink.evco.platform.iam.vo.UserStatusVO;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.elink.evco.web.security.AuthContextHolder;
+import com.elink.evco.web.security.HasPermission;
+import com.elink.evco.web.trace.TraceIdHolder;
+import com.elink.evco.web.util.Ids;
 import jakarta.validation.Valid;
-import java.util.Optional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -34,11 +30,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * IAM 管理用户端点：分页查询、详情、创建（幂等 + 初始密码一次性返回）、
- * 编辑（乐观锁）、逻辑删除、角色集合替换与状态迁移。
+ * IAM 管理用户端点：分页查询、详情、创建（幂等 + 初始密码一次性返回）、 编辑（乐观锁）、逻辑删除、角色集合替换与状态迁移。
  *
- * <p>权限模型：GET 校验 iam_user:read，写方法校验 iam_user:write 且标记
- * IOT 维护数据域（iotManaged=true，IOT 协同模式下返回 DEPLOYMENT_MODE_READONLY）。
+ * <p>权限模型：GET 校验 iam_user:read，写方法校验 iam_user:write 且标记 IOT 维护数据域（iotManaged=true，IOT 协同模式下返回
+ * DEPLOYMENT_MODE_READONLY）。
  */
 @RestController
 @RequestMapping("/api/v1/iam/users")
@@ -53,23 +48,15 @@ public class IamUserController {
     /** 幂等服务。 */
     private final IdempotencyService idempotencyService;
 
-    /** JSON 序列化器；幂等重放响应反序列化。 */
-    private final ObjectMapper objectMapper;
-
     /**
      * 构造用户端点。
      *
      * @param userService 用户服务。
      * @param idempotencyService 幂等服务。
-     * @param objectMapper JSON 序列化器。
      */
-    public IamUserController(
-            IamUserService userService,
-            IdempotencyService idempotencyService,
-            ObjectMapper objectMapper) {
+    public IamUserController(IamUserService userService, IdempotencyService idempotencyService) {
         this.userService = userService;
         this.idempotencyService = idempotencyService;
-        this.objectMapper = objectMapper;
     }
 
     /**
@@ -116,16 +103,11 @@ public class IamUserController {
     public ApiResponse<UserDetailVO> createUser(
             @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
             @Valid @RequestBody CreateUserRequest request) {
-        Optional<ApiResponse<UserDetailVO>> replayed =
-                replayCreate(idempotencyKey, request);
-        if (replayed.isPresent()) {
-            return replayed.get();
-        }
-        UserDetailVO data = userService.createUser(AuthContextHolder.require(), request);
-        ApiResponse<UserDetailVO> response =
-                ApiResponse.success(data, TraceIdHolder.current().value());
-        idempotencyService.complete(CREATE_IDEMPOTENCY_SCOPE, idempotencyKey, response);
-        return response;
+        return idempotencyService.execute(
+                CREATE_IDEMPOTENCY_SCOPE,
+                idempotencyKey,
+                request,
+                () -> userService.createUser(AuthContextHolder.require(), request));
     }
 
     /**
@@ -206,29 +188,5 @@ public class IamUserController {
                 userService.changeStatus(
                         AuthContextHolder.require(), Ids.parse(userId, "userId"), request);
         return ApiResponse.success(data, TraceIdHolder.current().value());
-    }
-
-    /**
-     * 创建幂等重放：命中缓存时反序列化首个成功响应原样返回。
-     *
-     * @param idempotencyKey 幂等键。
-     * @param request 创建请求（指纹比对）。
-     * @return 命中时返回缓存响应；未命中返回空。
-     */
-    private Optional<ApiResponse<UserDetailVO>> replayCreate(
-            String idempotencyKey, CreateUserRequest request) {
-        Optional<String> cached =
-                idempotencyService.begin(CREATE_IDEMPOTENCY_SCOPE, idempotencyKey, request);
-        if (cached.isEmpty()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(
-                    objectMapper.readValue(
-                            cached.get(), new TypeReference<ApiResponse<UserDetailVO>>() {}));
-        } catch (JsonProcessingException ex) {
-            // 缓存内容仅由本服务写入；损坏即程序缺陷，快速失败暴露问题。
-            throw new IllegalStateException("用户创建幂等缓存损坏", ex);
-        }
     }
 }

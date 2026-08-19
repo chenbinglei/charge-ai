@@ -8,4 +8,5 @@ import jakarta.validation.constraints.NotBlank;
  * @param sessionId 会话 ID。
  * @param reason 撤销原因；写入审计摘要。
  */
-public record RevokeRequest(@NotBlank(message = "sessionId 不能为空") String sessionId, String reason) {}
+public record RevokeRequest(
+        @NotBlank(message = "sessionId 不能为空") String sessionId, String reason) {}

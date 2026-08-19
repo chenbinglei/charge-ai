@@ -10,8 +10,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 权限主数据（iam_permission）：资源 + 读/写两档（code=resource:read/write），
- * 与 IOT linkos 共用编码体系；关闭态功能权限初始化为 INACTIVE。
+ * 权限主数据（iam_permission）：资源 + 读/写两档（code=resource:read/write）， 与 IOT linkos 共用编码体系；关闭态功能权限初始化为
+ * INACTIVE。
  */
 @Setter
 @Getter

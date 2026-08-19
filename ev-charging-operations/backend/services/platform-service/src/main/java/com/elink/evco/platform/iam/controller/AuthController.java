@@ -1,10 +1,6 @@
 package com.elink.evco.platform.iam.controller;
 
 import com.elink.evco.kernel.api.ApiResponse;
-import com.elink.evco.platform.common.security.AuthContextHolder;
-import com.elink.evco.platform.common.security.HasPermission;
-import com.elink.evco.platform.common.web.Ids;
-import com.elink.evco.platform.common.web.TraceIdHolder;
 import com.elink.evco.platform.iam.dto.LoginRequest;
 import com.elink.evco.platform.iam.dto.LogoutRequest;
 import com.elink.evco.platform.iam.dto.RefreshRequest;
@@ -18,12 +14,13 @@ import com.elink.evco.platform.iam.service.SsoService;
 import com.elink.evco.platform.iam.vo.CaptchaVO;
 import com.elink.evco.platform.iam.vo.LoginVO;
 import com.elink.evco.platform.iam.vo.ProfileVO;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.elink.evco.web.security.AuthContextHolder;
+import com.elink.evco.web.security.HasPermission;
+import com.elink.evco.web.trace.TraceIdHolder;
+import com.elink.evco.web.util.Ids;
+import com.elink.evco.web.util.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import java.util.Optional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,11 +29,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 认证端点：图形验证码、账号密码登录、SSO 免登录（IOT 协同模式）、
- * 档案（权限/菜单/部署模式）、登出、刷新与被动撤销。
+ * 认证端点：图形验证码、账号密码登录、SSO 免登录（IOT 协同模式）、 档案（权限/菜单/部署模式）、登出、刷新与被动撤销。
  *
- * <p>登录/SSO 端点为匿名入口（由 BearerAuthFilter 白名单放行）；
- * profile/revoke 需有效令牌；revoke 按 iam_user:write 两档权限校验。
+ * <p>登录/SSO 端点为匿名入口（由 BearerAuthFilter 白名单放行）； profile/revoke 需有效令牌；revoke 按 iam_user:write 两档权限校验。
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -47,9 +42,6 @@ public class AuthController {
 
     /** 服务间凭证请求头；IOT 推送 SSO ticket 携带。 */
     private static final String API_KEY_HEADER = "X-API-Key";
-
-    /** 代理转发链路头；取第一跳作为客户端真实 IP。 */
-    private static final String FORWARDED_FOR_HEADER = "X-Forwarded-For";
 
     /** 认证服务。 */
     private final AuthService authService;
@@ -63,9 +55,6 @@ public class AuthController {
     /** 幂等服务。 */
     private final IdempotencyService idempotencyService;
 
-    /** JSON 序列化器；幂等重放响应反序列化。 */
-    private final ObjectMapper objectMapper;
-
     /**
      * 构造认证端点。
      *
@@ -73,19 +62,16 @@ public class AuthController {
      * @param captchaService 验证码服务。
      * @param ssoService SSO 服务。
      * @param idempotencyService 幂等服务。
-     * @param objectMapper JSON 序列化器。
      */
     public AuthController(
             AuthService authService,
             CaptchaService captchaService,
             SsoService ssoService,
-            IdempotencyService idempotencyService,
-            ObjectMapper objectMapper) {
+            IdempotencyService idempotencyService) {
         this.authService = authService;
         this.captchaService = captchaService;
         this.ssoService = ssoService;
         this.idempotencyService = idempotencyService;
-        this.objectMapper = objectMapper;
     }
 
     /**
@@ -111,18 +97,15 @@ public class AuthController {
             @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest servletRequest) {
-        Optional<ApiResponse<LoginVO>> replayed =
-                replayLogin(idempotencyKey, request);
-        if (replayed.isPresent()) {
-            return replayed.get();
-        }
-        LoginVO data =
-                authService.login(
-                        request, clientIp(servletRequest), servletRequest.getHeader("User-Agent"));
-        ApiResponse<LoginVO> response =
-                ApiResponse.success(data, TraceIdHolder.current().value());
-        idempotencyService.complete(LOGIN_IDEMPOTENCY_SCOPE, idempotencyKey, response);
-        return response;
+        return idempotencyService.execute(
+                LOGIN_IDEMPOTENCY_SCOPE,
+                idempotencyKey,
+                request,
+                () ->
+                        authService.login(
+                                request,
+                                WebUtils.clientIp(servletRequest),
+                                servletRequest.getHeader("User-Agent")));
     }
 
     /**
@@ -153,7 +136,7 @@ public class AuthController {
         LoginVO data =
                 ssoService.ssoLogin(
                         request.ticket(),
-                        clientIp(servletRequest),
+                        WebUtils.clientIp(servletRequest),
                         servletRequest.getHeader("User-Agent"));
         return ApiResponse.success(data, TraceIdHolder.current().value());
     }
@@ -207,41 +190,5 @@ public class AuthController {
                 request.reason(),
                 AuthContextHolder.require());
         return ApiResponse.success(null, TraceIdHolder.current().value());
-    }
-
-    /**
-     * 登录幂等重放：命中缓存时反序列化首个成功响应原样返回。
-     *
-     * @param idempotencyKey 幂等键。
-     * @param request 登录请求（指纹比对）。
-     * @return 命中时返回缓存响应；未命中返回空。
-     */
-    private Optional<ApiResponse<LoginVO>> replayLogin(String idempotencyKey, LoginRequest request) {
-        Optional<String> cached =
-                idempotencyService.begin(LOGIN_IDEMPOTENCY_SCOPE, idempotencyKey, request);
-        if (cached.isEmpty()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(
-                    objectMapper.readValue(cached.get(), new TypeReference<ApiResponse<LoginVO>>() {}));
-        } catch (JsonProcessingException ex) {
-            // 缓存内容仅由本服务写入；损坏即程序缺陷，快速失败暴露问题。
-            throw new IllegalStateException("登录幂等缓存损坏", ex);
-        }
-    }
-
-    /**
-     * 提取客户端真实 IP；优先取代理链第一跳，防御头缺失场景。
-     *
-     * @param request 当前请求。
-     * @return 客户端 IP。
-     */
-    private String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader(FORWARDED_FOR_HEADER);
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 }

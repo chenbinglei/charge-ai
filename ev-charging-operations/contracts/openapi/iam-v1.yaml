@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: EVCO IAM 用户与角色 API
-  version: 1.1.0
+  version: 1.2.0
   description: |
     P1/P2 管理端 IAM 管理用户与角色绑定的 OpenAPI 契约。
     M1 个人充电用户不配置页面或功能角色。
@@ -10,6 +10,8 @@ info:
     v1.1.0：全部 200 响应补齐 ApiResponse 信封与 data 类型
     （UserDetailVO/UserRoleBindingVO/UserStatusVO/RoleOptionVO 数组）；
     roles/status 写端点补充 IOT 协同模式 403（DEPLOYMENT_MODE_READONLY）声明。
+    v1.2.0：角色替换补乐观锁——ReplaceUserRolesRequest 必填 version，
+    并发替换返回 409 VERSION_CONFLICT（权限变更需与其他写端点一致的冲突信号）。
 paths:
   /api/v1/iam/users:
     get:
@@ -188,6 +190,8 @@ paths:
                         $ref: '#/components/schemas/UserRoleBindingVO'
         '403':
           description: IOT 协同模式下该数据域只读（DEPLOYMENT_MODE_READONLY）或越权授予（IAM_ROLE_OUT_OF_SCOPE）
+        '409':
+          description: 乐观锁版本冲突（VERSION_CONFLICT）
   /api/v1/iam/users/{userId}/status:
     patch:
       summary: 启用、停用或锁定用户
@@ -271,12 +275,15 @@ components:
     ReplaceUserRolesRequest:
       type: object
       additionalProperties: false
-      required: [roleIds]
+      required: [roleIds, version]
       properties:
         roleIds:
           type: array
           items: { type: string }
-          description: 替换后的完整角色集合（雪花 ID 字符串形式）。
+          description: 替换后的完整角色集合（雪花 ID 字符串形式）；空数组表示解除全部绑定。
+        version:
+          type: integer
+          description: 乐观锁版本；权限变更与其他写端点一致必须携带冲突信号。
     ChangeUserStatusRequest:
       type: object
       additionalProperties: false

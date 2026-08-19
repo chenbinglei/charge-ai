@@ -7,9 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
-/**
- * 权限主数据访问；权限集合经 Redis 缓存后供鉴权与 profile 使用。
- */
+/** 权限主数据访问；权限集合经 Redis 缓存后供鉴权与 profile 使用。 */
 @Mapper
 public interface IamPermissionMapper extends BaseMapper<IamPermission> {
 
@@ -37,7 +35,6 @@ public interface IamPermissionMapper extends BaseMapper<IamPermission> {
      *
      * @return 权限码集合。
      */
-    @Select(
-            "SELECT code FROM iam_permission WHERE status = 'ACTIVE' AND deleted_at IS NULL")
+    @Select("SELECT code FROM iam_permission WHERE status = 'ACTIVE' AND deleted_at IS NULL")
     List<String> selectAllActiveCodes();
 }

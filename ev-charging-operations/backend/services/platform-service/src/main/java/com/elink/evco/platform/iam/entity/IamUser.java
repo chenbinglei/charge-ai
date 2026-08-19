@@ -13,8 +13,7 @@ import lombok.Setter;
 /**
  * IAM 管理端用户（iam_user）：状态机 active/locked/disabled，软删释放登录名。
  *
- * <p>IOT 协同模式下由 IOT 推送维护（source=IOT_PUSH、沿用 IOT 用户 ID）；
- * 平台扩展字段（locked_until 等）推送时不被覆盖（设计包 §8.3）。
+ * <p>IOT 协同模式下由 IOT 推送维护（source=IOT_PUSH、沿用 IOT 用户 ID）； 平台扩展字段（locked_until 等）推送时不被覆盖（设计包 §8.3）。
  */
 @Setter
 @Getter
@@ -95,8 +94,7 @@ public class IamUser {
     private String lastLoginIp;
 
     /** 乐观锁版本；更新时递增。 */
-    @Version
-    private Integer version;
+    @Version private Integer version;
 
     /** 创建时间（UTC），插入自动填充。 */
     @TableField(fill = FieldFill.INSERT)

@@ -18,6 +18,7 @@ public record CreateUserRequest(
         @NotBlank(message = "登录名不能为空")
                 @Pattern(regexp = "^[a-zA-Z0-9_]{3,64}$", message = "登录名为 3-64 位字母数字下划线")
                 String username,
-        @NotBlank(message = "展示姓名不能为空") @Size(max = 64, message = "展示姓名不超过 64 字符") String displayName,
+        @NotBlank(message = "展示姓名不能为空") @Size(max = 64, message = "展示姓名不超过 64 字符")
+                String displayName,
         @NotEmpty(message = "初始角色不能为空") List<String> roleIds,
         String tenantId) {}

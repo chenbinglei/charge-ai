@@ -7,9 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
-/**
- * IAM 角色表数据访问；含按用户聚合的角色连接查询。
- */
+/** IAM 角色表数据访问；含按用户聚合的角色连接查询。 */
 @Mapper
 public interface IamRoleMapper extends BaseMapper<IamRole> {
 

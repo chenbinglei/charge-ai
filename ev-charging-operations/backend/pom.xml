@@ -22,6 +22,7 @@
     <modules>
         <module>libraries/shared-kernel</module>
         <module>libraries/contracts</module>
+        <module>libraries/starter</module>
         <module>libraries/testkit</module>
         <module>services/api-gateway</module>
         <module>services/platform-service</module>

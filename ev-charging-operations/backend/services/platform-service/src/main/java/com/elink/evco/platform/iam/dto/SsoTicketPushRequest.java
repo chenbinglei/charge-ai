@@ -14,7 +14,8 @@ import java.time.Instant;
  * @param expireAt 票据过期时间（UTC）。
  */
 public record SsoTicketPushRequest(
-        @NotBlank(message = "ticket 不能为空") @Size(min = 32, message = "ticket 长度必须不少于 32 字符") String ticket,
+        @NotBlank(message = "ticket 不能为空") @Size(min = 32, message = "ticket 长度必须不少于 32 字符")
+                String ticket,
         @NotBlank(message = "iotUserId 不能为空") String iotUserId,
         String displayName,
         @NotNull(message = "expireAt 不能为空") Instant expireAt) {}

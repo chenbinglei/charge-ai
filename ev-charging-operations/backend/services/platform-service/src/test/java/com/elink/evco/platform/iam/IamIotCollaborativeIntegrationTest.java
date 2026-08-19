@@ -1,5 +1,9 @@
 package com.elink.evco.platform.iam;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.elink.evco.platform.iam.entity.AuthSession;
 import com.elink.evco.platform.iam.entity.IamRole;
@@ -21,14 +25,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 /**
- * IOT 协同模式（IOT_COLLABORATIVE）IAM 集成测试：IOT 维护数据域写操作只读、
- * 读接口与密码登录不受影响、SSO 一次性 ticket 推送/换会话/防重放/防探测、
+ * IOT 协同模式（IOT_COLLABORATIVE）IAM 集成测试：IOT 维护数据域写操作只读、 读接口与密码登录不受影响、SSO 一次性 ticket 推送/换会话/防重放/防探测、
  * 会话被动撤销双模式可用。
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -58,15 +56,19 @@ class IamIotCollaborativeIntegrationTest extends IamIntegrationSupport {
     /** 会话数据访问（被动撤销夹具）。 */
     @Autowired private AuthSessionMapper sessionMapper;
 
-    /**
-     * 种子账号：持写权限管理员、IOT 推送身份的 SSO 用户。
-     */
+    /** 种子账号：持写权限管理员、IOT 推送身份的 SSO 用户。 */
     @BeforeAll
     void seedAccounts() {
-        seedUser("iot_admin", IamUser.TYPE_NORMAL, SYSTEM_TENANT_ID,
+        seedUser(
+                "iot_admin",
+                IamUser.TYPE_NORMAL,
+                SYSTEM_TENANT_ID,
                 List.of(PERM_IAM_USER_READ, PERM_IAM_USER_WRITE, PERM_IAM_ROLE_READ));
         ssoUser =
-                seedUser("iot_sso_user", IamUser.TYPE_NORMAL, SYSTEM_TENANT_ID,
+                seedUser(
+                        "iot_sso_user",
+                        IamUser.TYPE_NORMAL,
+                        SYSTEM_TENANT_ID,
                         List.of(PERM_IAM_USER_READ));
         // 覆写为 IOT 推送身份（source=IOT_PUSH + iot_user_id）。
         IamUser patch = new IamUser();
@@ -82,8 +84,13 @@ class IamIotCollaborativeIntegrationTest extends IamIntegrationSupport {
     @DisplayName("只读域：创建用户被拒")
     void createUserRejectedInCollaborativeMode() {
         Map<String, Object> body =
-                Map.of("username", "iot_created_01", "displayName", "协同模式用户",
-                        "roleIds", List.of(String.valueOf(roleIdOf("iot_admin"))));
+                Map.of(
+                        "username",
+                        "iot_created_01",
+                        "displayName",
+                        "协同模式用户",
+                        "roleIds",
+                        List.of(String.valueOf(roleIdOf("iot_admin"))));
         ResponseEntity<Map> response =
                 exchange(HttpMethod.POST, "/api/v1/iam/users", adminToken, body);
         assertEquals(403, response.getStatusCode().value());
@@ -118,15 +125,17 @@ class IamIotCollaborativeIntegrationTest extends IamIntegrationSupport {
     @DisplayName("SSO：服务间凭证校验")
     void ticketPushRequiresValidApiKey() {
         Map<String, Object> push = ticketPushBody();
-        ResponseEntity<Map> noKey =
-                rest.postForEntity("/api/v1/auth/sso/tickets", push, Map.class);
+        ResponseEntity<Map> noKey = rest.postForEntity("/api/v1/auth/sso/tickets", push, Map.class);
         assertEquals(401, noKey.getStatusCode().value());
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-API-Key", "wrong-api-key");
         ResponseEntity<Map> wrongKey =
-                rest.exchange("/api/v1/auth/sso/tickets", HttpMethod.POST,
-                        new HttpEntity<>(push, headers), Map.class);
+                rest.exchange(
+                        "/api/v1/auth/sso/tickets",
+                        HttpMethod.POST,
+                        new HttpEntity<>(push, headers),
+                        Map.class);
         assertEquals(401, wrongKey.getStatusCode().value());
         assertEquals("UNAUTHENTICATED", codeOf(wrongKey));
     }
@@ -156,8 +165,10 @@ class IamIotCollaborativeIntegrationTest extends IamIntegrationSupport {
     @DisplayName("SSO：未知票据防探测")
     void unknownTicketRejectedUniformly() {
         ResponseEntity<Map> response =
-                rest.postForEntity("/api/v1/auth/sso/login",
-                        Map.of("ticket", "unknown-ticket-" + "x".repeat(32)), Map.class);
+                rest.postForEntity(
+                        "/api/v1/auth/sso/login",
+                        Map.of("ticket", "unknown-ticket-" + "x".repeat(32)),
+                        Map.class);
         assertEquals(401, response.getStatusCode().value());
         assertEquals("SSO_TICKET_INVALID", codeOf(response));
     }
@@ -188,7 +199,10 @@ class IamIotCollaborativeIntegrationTest extends IamIntegrationSupport {
         assertNotNull(session, "受害者应存在活跃会话");
 
         ResponseEntity<Map> revoke =
-                exchange(HttpMethod.POST, "/api/v1/auth/revoke", adminToken,
+                exchange(
+                        HttpMethod.POST,
+                        "/api/v1/auth/revoke",
+                        adminToken,
                         Map.of("sessionId", String.valueOf(session.getId()), "reason", "测试强制下线"));
         assertEquals(200, revoke.getStatusCode().value());
 
@@ -243,8 +257,11 @@ class IamIotCollaborativeIntegrationTest extends IamIntegrationSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-API-Key", apiKey);
         ResponseEntity<Map> response =
-                rest.exchange("/api/v1/auth/sso/tickets", HttpMethod.POST,
-                        new HttpEntity<>(body, headers), Map.class);
+                rest.exchange(
+                        "/api/v1/auth/sso/tickets",
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        Map.class);
         assertEquals(200, response.getStatusCode().value(), "ticket 推送应成功");
         return (String) body.get("ticket");
     }
@@ -257,8 +274,9 @@ class IamIotCollaborativeIntegrationTest extends IamIntegrationSupport {
      */
     private Long roleIdOf(String username) {
         return roleMapper
-                .selectOne(new LambdaQueryWrapper<IamRole>()
-                        .eq(IamRole::getCode, "ROLE_" + username.toUpperCase()))
+                .selectOne(
+                        new LambdaQueryWrapper<IamRole>()
+                                .eq(IamRole::getCode, "ROLE_" + username.toUpperCase()))
                 .getId();
     }
 }

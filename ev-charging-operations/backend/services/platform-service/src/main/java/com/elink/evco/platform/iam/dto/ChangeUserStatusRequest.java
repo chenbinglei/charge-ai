@@ -10,5 +10,7 @@ import jakarta.validation.constraints.Pattern;
  */
 public record ChangeUserStatusRequest(
         @NotBlank(message = "status 不能为空")
-                @Pattern(regexp = "active|locked|disabled", message = "status 仅允许 active/locked/disabled")
+                @Pattern(
+                        regexp = "active|locked|disabled",
+                        message = "status 仅允许 active/locked/disabled")
                 String status) {}

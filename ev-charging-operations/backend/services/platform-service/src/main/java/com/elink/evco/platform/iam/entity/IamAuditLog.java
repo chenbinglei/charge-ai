@@ -9,9 +9,7 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * IAM 操作审计日志（iam_audit_log）：追加只写，不更新不删除；90 天后冷存储归档。
- */
+/** IAM 操作审计日志（iam_audit_log）：追加只写，不更新不删除；90 天后冷存储归档。 */
 @Setter
 @Getter
 @TableName("iam_audit_log")

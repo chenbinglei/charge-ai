@@ -1,6 +1,6 @@
 package com.elink.evco.platform.iam;
 
-import com.elink.evco.platform.common.cache.RedisKeys;
+import com.elink.evco.platform.iam.cache.RedisKeys;
 import com.elink.evco.platform.iam.entity.IamRole;
 import com.elink.evco.platform.iam.entity.IamRolePermission;
 import com.elink.evco.platform.iam.entity.IamUser;
@@ -27,11 +27,10 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * IAM 集成测试公共支撑：单例 MySQL + Redis 容器（整个 JVM 生命周期共享，
- * 避免 Spring 上下文缓存指向已销毁容器）、种子用户构造与登录辅助。
+ * IAM 集成测试公共支撑：单例 MySQL + Redis 容器（整个 JVM 生命周期共享， 避免 Spring 上下文缓存指向已销毁容器）、种子用户构造与登录辅助。
  *
- * <p>种子数据直接经 Mapper 写入（测试夹具不走生产 API），权限主数据由
- * V202608240005 迁移种子提供（iam_user:read=…001、iam_user:write=…002、iam_role:read=…018）。
+ * <p>种子数据直接经 Mapper 写入（测试夹具不走生产 API），权限主数据由 V202608240005
+ * 迁移种子提供（iam_user:read=…001、iam_user:write=…002、iam_role:read=…018）。
  * 两个子类共用同一数据库：迁移只执行一次，种子用户名必须各子类内唯一。
  */
 public abstract class IamIntegrationSupport {
@@ -116,7 +115,8 @@ public abstract class IamIntegrationSupport {
      * @param permissionIds 角色绑定的权限 ID 集合。
      * @return 已落库用户实体。
      */
-    protected IamUser seedUser(String username, String userType, Long tenantId, List<Long> permissionIds) {
+    protected IamUser seedUser(
+            String username, String userType, Long tenantId, List<Long> permissionIds) {
         IamRole role = new IamRole();
         role.setTenantId(tenantId);
         role.setCode("ROLE_" + username.toUpperCase());
@@ -208,7 +208,8 @@ public abstract class IamIntegrationSupport {
      * @param body 请求体；null 表示无体。
      * @return 原始响应。
      */
-    protected ResponseEntity<Map> exchange(HttpMethod method, String path, Map<?, ?> token, Object body) {
+    protected ResponseEntity<Map> exchange(
+            HttpMethod method, String path, Map<?, ?> token, Object body) {
         HttpHeaders headers = bearer(token);
         return rest.exchange(path, method, new HttpEntity<>(body, headers), Map.class);
     }
