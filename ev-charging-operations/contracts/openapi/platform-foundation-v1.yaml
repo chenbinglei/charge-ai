@@ -9,8 +9,8 @@ components:
     IdempotencyKey:
       name: X-Idempotency-Key
       in: header
-      required: true
-      description: 有副作用请求的幂等键；同一主体、端点与请求摘要重复时返回原结果。
+      required: false
+      description: 有副作用请求的幂等键；同一主体、端点与请求摘要重复时返回原结果。建议有副作用请求始终携带；缺失时服务端跳过幂等保护。
       schema:
         type: string
         minLength: 1

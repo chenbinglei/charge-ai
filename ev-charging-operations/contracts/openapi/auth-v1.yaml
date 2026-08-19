@@ -1,12 +1,14 @@
 openapi: 3.1.0
 info:
   title: EVCO 认证服务 API
-  version: 1.1.0
+  version: 1.2.0
   description: |
     平台认证服务的 OpenAPI 契约。
     覆盖登录（图形验证码）、登出、刷新、撤销、M1 微信登录 Mock、
     IOT 协同模式 SSO 免登录（一次性 ticket 换会话）与 profile（权限/菜单/部署模式）。
     引用 platform-foundation-v1.yaml 的公共组件。
+    v1.2.0：全部 200 响应统一补齐 ApiResponse 信封（与实现一致）；
+    m1/wechat-mock 标注交付批次（依赖 evco_customer personal_user 表）。
 paths:
   /api/v1/auth/captcha:
     get:
@@ -19,7 +21,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CaptchaResponse'
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CaptchaResponse'
   /api/v1/auth/login:
     post:
       summary: 平台管理端登录
@@ -38,7 +45,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/LoginResponse'
         '401':
           description: 认证失败（用户名/密码错误、验证码错误、账号锁定）
   /api/v1/auth/sso/tickets:
@@ -59,6 +71,10 @@ paths:
       responses:
         '200':
           description: ticket 已接收
+          content:
+            application/json:
+              schema:
+                $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
         '400':
           description: ticket 撞号（键已存在，NX 写入失败）
         '401':
@@ -88,7 +104,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/LoginResponse'
         '401':
           description: ticket 无效、已使用或已过期（SSO_TICKET_INVALID）
         '403':
@@ -108,7 +129,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProfileResponse'
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ProfileResponse'
         '401':
           description: 未登录或令牌无效
   /api/v1/auth/logout:
@@ -124,6 +150,10 @@ paths:
       responses:
         '200':
           description: 登出成功
+          content:
+            application/json:
+              schema:
+                $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
   /api/v1/auth/refresh:
     post:
       summary: 刷新 access_token
@@ -140,7 +170,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/LoginResponse'
         '401':
           description: refresh_token 已使用或已撤销
   /api/v1/auth/revoke:
@@ -156,9 +191,17 @@ paths:
       responses:
         '200':
           description: 撤销成功
+          content:
+            application/json:
+              schema:
+                $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
   /api/v1/auth/m1/wechat-mock:
     post:
       summary: M1 微信登录 Mock（C1-Mock）
+      description: |
+        W2-D-12 交付物。依赖 evco_customer personal_user/channel_identity 表
+        （设计包 §3.2 迁移批次）；当前批次（evco_iam §3.1）未实现，随个人身份批次交付。
+        C1-Mock 通过不等于 C1-W 真实门禁通过。
       operationId: m1WechatMockLogin
       parameters:
         - $ref: './platform-foundation-v1.yaml#/components/parameters/IdempotencyKey'
@@ -174,7 +217,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/LoginResponse'
 components:
   schemas:
     CaptchaResponse:
@@ -207,8 +255,8 @@ components:
           type: string
           description: 图形验证码内容；一次性校验，校验后立即失效。
         tenantId:
-          type: integer
-          description: 租户 ID；平台管理员可省略。
+          type: string
+          description: 租户 ID（雪花 ID 字符串形式）；平台管理员可省略。
     LoginResponse:
       type: object
       properties:
@@ -225,7 +273,8 @@ components:
           type: string
           default: Bearer
         userId:
-          type: integer
+          type: string
+          description: 用户 ID（雪花 ID 字符串形式）。
         displayName:
           type: string
         roles:
@@ -244,8 +293,8 @@ components:
           type: string
           description: 一次性票据随机串（≥32 字符，CSPRNG 生成）；写入键 sso:ticket:{ticket}，SET EX 120 NX（撞号拒绝）；P1 侧校验用 GETDEL 原子消费；原文不写日志/审计（仅记 SHA-256 指纹前 8 位）。
         iotUserId:
-          type: integer
-          description: IOT 侧用户 ID；P1 按 iam_user.iot_user_id（source=IOT_PUSH）定位本地用户。
+          type: string
+          description: IOT 侧用户 ID（雪花 ID 字符串形式）；P1 按 iam_user.iot_user_id（source=IOT_PUSH）定位本地用户。
         displayName:
           type: string
           description: IOT 侧展示名；仅用于审计记录，不覆盖本地用户资料。
@@ -265,7 +314,8 @@ components:
       type: object
       properties:
         userId:
-          type: integer
+          type: string
+          description: 用户 ID（雪花 ID 字符串形式）。
         username:
           type: string
         displayName:
@@ -322,7 +372,8 @@ components:
       required: [sessionId]
       properties:
         sessionId:
-          type: integer
+          type: string
+          description: 会话 ID（雪花 ID 字符串形式）。
         reason:
           type: string
     M1WechatMockLoginRequest:
