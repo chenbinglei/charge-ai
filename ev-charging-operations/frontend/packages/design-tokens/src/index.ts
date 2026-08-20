@@ -2,7 +2,15 @@ import type { ThemeName } from "@evco/types";
 
 /** 三种主题共享的排版、栅格和响应式语义 Token。 */
 export const layoutTokens = {
-  contentMaxWidth: "1440px",
+  /** 受控流式（DEC-20260820-008/009）：内容区不设全局最大宽度，仅语义容器局部封顶。 */
+  formMaxWidth: "1200px",
+  textMaxWidth: "1000px",
+  /** 四档断点（§5.1）：>=1440 桌面 / >=992 笔记本 / >=768 平板 / <768 手机。 */
+  breakpoints: {
+    desktop: "1440px",
+    laptop: "992px",
+    tablet: "768px",
+  } as const,
   gridColumns: 24,
   headerHeight: "64px",
   sidebarCollapsedWidth: "64px",

@@ -9,6 +9,10 @@
   --evco-status-charging: #52c41a;
   --evco-status-fault: #ff4d4f;
   --evco-status-idle: #1890ff;
+  --evco-status-success: #67c23a;
+  --evco-status-warning: #e6a23c;
+  --evco-status-error: #f56c6c;
+  --evco-status-info: #909399;
   --evco-border: #e4e7ed;
   --evco-shadow-card: 0 2px 12px rgb(0 0 0 / 8%);
 }
@@ -23,6 +27,10 @@
   --evco-status-charging: #75d64f;
   --evco-status-fault: #ff7375;
   --evco-status-idle: #5caeff;
+  --evco-status-success: #75d64f;
+  --evco-status-warning: #d9a441;
+  --evco-status-error: #ff7375;
+  --evco-status-info: #8b95a5;
   --evco-border: #3b4351;
   --evco-shadow-card: 0 8px 24px rgb(0 0 0 / 24%);
 }
@@ -37,12 +45,22 @@
   --evco-status-charging: #7dff86;
   --evco-status-fault: #ff6d79;
   --evco-status-idle: #55c9ff;
+  --evco-status-success: #7dff86;
+  --evco-status-warning: #ffc65c;
+  --evco-status-error: #ff6d79;
+  --evco-status-info: #7fa8c9;
   --evco-border: rgb(255 255 255 / 10%);
   --evco-shadow-card: 0 10px 32px rgb(0 0 0 / 35%);
 }
 
 :root {
-  --evco-content-max-width: 1440px;
+  /* 受控流式（DEC-20260820-008/009）：内容区不设全局最大宽度，仅语义容器局部封顶。 */
+  --evco-form-max-width: 1200px;
+  --evco-text-max-width: 1000px;
+  /* 四档断点（§5.1）：>=1440 受控流式桌面 / 992-1439 压缩列宽 / 768-991 侧栏折叠 / <768 卡片化。 */
+  --evco-bp-desktop: 1440px;
+  --evco-bp-laptop: 992px;
+  --evco-bp-tablet: 768px;
   --evco-grid-columns: 24;
   --evco-header-height: 64px;
   --evco-sidebar-expanded-width: 210px;

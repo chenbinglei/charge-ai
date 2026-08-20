@@ -47,7 +47,7 @@ function selectTheme(themeName: ThemeName): void {
 }
 
 .foundation-card {
-  width: min(100%, var(--evco-content-max-width));
+  width: 100%;
   max-width: 720px;
   padding: var(--evco-spacing-4);
   border: 1px solid var(--evco-border);
