@@ -1,8 +1,8 @@
 # 认证与 SSO 接口规范
 
-> 版本：v1.0
+> 版本：v1.2
 > 状态：W2 模块实施前的强制接口设计基线；本文不是已发布运行时 API。
-> 依据：[auth-v1.yaml](../../contracts/openapi/auth-v1.yaml) v1.1、《[API 通用接口规范](API通用接口规范-v1.md)》、《[W2 技术设计与契约包](../design/W2-IAM个人身份与配置技术设计与契约包.md)》§8 双模式设计。
+> 依据：[auth-v1.yaml](../../contracts/openapi/auth-v1.yaml) v1.2.0（全部 200 响应统一 ApiResponse 信封；m1/wechat-mock 端点标注交付批次依赖）、《[API 通用接口规范](API通用接口规范-v1.md)》、《[W2 技术设计与契约包](../design/W2-IAM个人身份与配置技术设计与契约包.md)》§8 双模式设计。
 > 边界：覆盖 P1/P2 管理端认证（登录、图形验证码、SSO 免登录、profile）；M1 个人用户微信登录见 auth-v1.yaml 的 m1/wechat-mock 端点，不在本文展开。
 
 ## 1. 资源边界
@@ -84,7 +84,7 @@
 
 ## 6. 后端、前端与测试落地
 
-- 后端目录固定为 `module/auth/{controller,dto,vo,service,cache}`；验证码生成与校验、ticket 接收与校验、菜单推导分别在 `captcha`、`sso`、`menuprovider` 组件实现；Controller 不得直连 Redis。
+- 后端目录固定为域包直挂 `auth/{controller,dto,vo,service,service/impl,cache}`（无 `module/` 中间层）；验证码生成与校验、ticket 接收与校验、菜单推导分别在 `captcha`、`sso`、`menuprovider` 组件实现；Controller 不得直连 Redis。
 - 前端：登录页集成图形验证码组件（点击图片刷新）；`/sso/login` 为独立轻量页面（仅处理 ticket 换会话与失败态）；全局 store 缓存 profile（permissions + deploymentMode + menus）。
 - 测试覆盖："验证码生成/过期/一次性、登录验证码错误、5 次锁定、SSO ticket 推送鉴权、ticket 换会话、**ticket 重放拒绝（GETDEL 原子性：并发同 ticket 仅一个成功）、ticket 撞号 NX 拒绝、用户定位失败后 ticket 不复活**、用户未推送拒绝、非 IOT 模式入口关闭、Redis 不可用 fail-closed、profile 菜单推导（部分权限父级隐藏/全无整棵隐藏）"；每个测试类、方法、夹具和关键 Given/When/Then 代码块写中文说明。
 
@@ -94,3 +94,4 @@
 | --- | --- | --- |
 | 2026-08-19 | v1.0 | 建立认证与 SSO 接口基线：确认登录使用图形验证码；新增 IOT 协同模式一次性 ticket 免登录（仅识别已推送用户）；新增 profile 返回权限码、部署模式与父级自动推导的可见菜单树。 |
 | 2026-08-19 | v1.1 | 新增 §4.1 ticket 防重放实现策略：Redis 键结构（sso:ticket:{ticket}，TTL 120 秒）、SET NX 唯一性写入、GETDEL 原子一次性消费（并发仅一个成功）、失败不区分生命周期状态、消费后不回滚、ticket 不入日志（审计只记指纹）、Redis 故障 fail-closed；测试项补充并发重放/撞号/不复活用例。 |
+| 2026-08-20 | v1.2 | 06-文档不一致清单 C-5：依据行同步 auth-v1.yaml v1.2.0（全部 200 响应统一 ApiResponse 信封、m1/wechat-mock 端点标注交付批次依赖）；后端目录改为域包直挂 `auth/{controller,dto,vo,service,service/impl,cache}`；修正头部版本号与修订记录脱节（v1.1 修订时未更新头部）。 |

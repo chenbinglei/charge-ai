@@ -4,7 +4,7 @@
 >
 > 状态：待用户审核；本包不是生产实现或上线证明。
 >
-> 版本：v1.4
+> 版本：v1.5
 >
 > 编制日期：2026-08-18
 >
@@ -280,11 +280,11 @@ stateDiagram-v2
 
 | 范围 | 后端目录 | 设计约束 |
 | --- | --- | --- |
-| IAM 用户与角色 | `module/iam/{controller,dto,vo,service,mapper,entity,convert,exception,validator,statemachine,policy}` | 角色替换/状态迁移/越权校验在 `service` 编排；复杂规则进入 `validator`/`statemachine`/`policy`；Controller 不直连 Mapper |
-| 认证服务 | `module/auth/{controller,dto,vo,service,mapper,entity,convert,exception}` | 令牌签发/撤销/刷新在 `service` 编排；令牌生成与校验进入 `token` 子包 |
-| 授权服务 | `module/authz/{interceptor,aspect,evaluator,context}` | 权限校验中间件；对象级授权在服务层；网关层只做令牌预校验 |
-| 个人用户主档 | `module/customer/{controller,dto,vo,service,mapper,entity,convert,exception,validator,statemachine}` | 渠道身份映射在 `service` 编排；冲突处置进入 `conflict` 子包；L3 字段加密/脱敏在 `crypto` 子包 |
-| P1 配置 | `module/config/{controller,dto,vo,service,mapper,entity,convert,exception}` | 渠道/支付/结算配置 CRUD；凭据受控录入与脱敏引用 |
+| IAM 用户与角色 | `iam/{controller,dto,vo,entity,mapper,service,service/impl,cache,util}`（域包直挂，实际现状；`convert`/`exception`/`validator`/`statemachine`/`policy` 为规模化后演进方向，不预建空包） | 角色替换/状态迁移/越权校验在 `service` 编排；Controller 不直连 Mapper |
+| 认证服务 | `auth/{controller,dto,vo,service,service/impl,mapper,entity,cache}`（域包直挂；令牌生成与校验按需进入 `token` 子包） | 令牌签发/撤销/刷新在 `service` 编排 |
+| 授权服务 | `authz/{interceptor,aspect,evaluator,context}`（域包直挂） | 权限校验中间件；对象级授权在服务层；网关层只做令牌预校验 |
+| 个人用户主档 | `customer/{controller,dto,vo,service,service/impl,mapper,entity,cache,util}`（域包直挂；冲突处置按需进入 `conflict` 子包；L3 字段加密/脱敏在 `util`） | 渠道身份映射在 `service` 编排 |
+| P1 配置 | `config/{controller,dto,vo,service,service/impl,mapper,entity,cache}`（域包直挂） | 渠道/支付/结算配置 CRUD；凭据受控录入与脱敏引用 |
 
 ### 6.3 前端目录
 
@@ -713,3 +713,4 @@ IOT 平台用户免登录直接进入 P1 平台，采用**一次性 ticket 换�
 | 2026-08-19 | v1.2 | 权限模型重构为与 IOT linkos 完全对齐的「资源 + 读/写两档」模型：废弃菜单/按钮/API 三级权限及 app_scope/resource_type/api_method/api_url 字段；iam_permission 采用 resource:action 编码 + scope（PLATFORM/TENANT/ENTERPRISE）+ source（PLATFORM/IOT_PUSH）；新增 iam_permission_policy/iam_permission_policy_item/iam_role_policy 策略批量授权表与 iam_org_data_scope/iam_tenant_data_scope/iam_tenant_grant 站点级数据授权表，替代 all/tenant/org/self 四档 data_scope；内置权限由 172 条按钮级归并为 84 资源 153 条两档权限（W2 初始化 17 条 + 预置策略 POLICY_SYSTEM_CONFIG）；新增 §8 双模式设计（模式定义、数据维护边界、IOT 推送镜像、写拦截 DEPLOYMENT_MODE_READONLY、登录认证）。 |
 | 2026-08-19 | v1.3 | 认证与菜单三项决策落盘：①登录确认使用图形验证码（auth-v1.yaml 新增 `GET /api/v1/auth/captcha`，LoginRequest 增加 captchaId/captchaCode，Redis 120 秒一次性校验）；②新增 §8.6 SSO 免登录——IOT 协同模式一次性 ticket 换会话（IOT 推送 ticket → 跳转 /sso/login → 换会话直接进入平台，仅识别已推送用户，防重放，auth_session 记录 auth_type；新增错误码 SSO_TICKET_INVALID/SSO_USER_NOT_FOUND）；③新增 §8.7 菜单可见性父级自动推导——叶子可见=resource:read，父级不单独授权、其下全不可见则整棵隐藏，profile 返回推导后菜单树，菜单树配置化支持架构调整（待前端骨架后评估入库）；§5.4 认证端点表扩至 8 个，新增验收用例 W2-D-16/17/18，新增《认证与SSO接口规范-v1.md》。 |
 | 2026-08-19 | v1.4 | 修复 iam_role:read 权限缺失（接口规范/roles/options 端点引用但未初始化）：§7.7.1 新增 iam_role 资源行（纯 read，平台角色 Tab 与角色下拉），统计调整为 85 资源 154 条权限、W2 初始化 18 条、POLICY_SYSTEM_CONFIG 16 条明细；同步迁移清单与 §7.9 表述。 |
+| 2026-08-20 | v1.5 | 06-文档不一致清单 A-5：§6.2 后端目录表对齐 W2 代码实际现状——域包直挂（无 `module/` 中间层），IAM 域实际包为 `iam/{controller,dto,vo,entity,mapper,service,service/impl,cache,util}`；`convert`/`exception`/`validator`/`statemachine`/`policy` 保留为规模化后演进方向，不预建空包；其余未开工域同步改为域包直挂表述。 |

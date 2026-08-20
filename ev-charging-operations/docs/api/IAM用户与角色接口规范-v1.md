@@ -1,6 +1,6 @@
 # IAM 用户与角色接口规范
 
-> 版本：v1.1
+> 版本：v1.2
 > 状态：W2 模块实施前的强制接口设计基线；本文不是已发布运行时 API。
 > 依据：DEC-20260814-021、《[API 通用接口规范](API通用接口规范-v1.md)》和现行 12 周计划。
 > 边界：仅覆盖 P1/P2 等管理端的 IAM 管理用户与角色绑定；M1 个人充电用户不配置页面或功能角色。
@@ -33,7 +33,7 @@
 | `GET /api/v1/iam/users/{userId}` | `iam_user:read` | 路径参数 `userId` | `ApiResponse<UserDetailVO>` | 查询单一可见用户及受控角色摘要。 |
 | `POST /api/v1/iam/users` | `iam_user:write` | `CreateUserRequest` + `X-Idempotency-Key` | `ApiResponse<UserDetailVO>` | 新增管理用户并绑定初始角色；用户名在所属租户范围内唯一。IOT 协同模式返回 `DEPLOYMENT_MODE_READONLY`。 |
 | `PUT /api/v1/iam/users/{userId}` | `iam_user:write` | `UpdateUserRequest` | `ApiResponse<UserDetailVO>` | 编辑允许维护的资料与版本；不通过本接口重置认证凭据。IOT 协同模式返回 `DEPLOYMENT_MODE_READONLY`。 |
-| `PUT /api/v1/iam/users/{userId}/roles` | `iam_user:write` | `ReplaceUserRolesRequest` | `ApiResponse<UserRoleBindingVO>` | 以完整角色集合替换绑定；需校验操作者不可越权授予角色。IOT 协同模式返回 `DEPLOYMENT_MODE_READONLY`。 |
+| `PUT /api/v1/iam/users/{userId}/roles` | `iam_user:write` | `ReplaceUserRolesRequest`（含 `version`） | `ApiResponse<UserRoleBindingVO>` | 以完整角色集合替换绑定；需校验操作者不可越权授予角色；携带 `version` 乐观锁，并发替换冲突返回 409 `VERSION_CONFLICT`。IOT 协同模式返回 `DEPLOYMENT_MODE_READONLY`。 |
 | `PATCH /api/v1/iam/users/{userId}/status` | `iam_user:write` | `ChangeUserStatusRequest` | `ApiResponse<UserStatusVO>` | 启用、停用或锁定用户；不得停用最后一个可用平台超级管理员。IOT 协同模式返回 `DEPLOYMENT_MODE_READONLY`。 |
 | `DELETE /api/v1/iam/users/{userId}` | `iam_user:write` | 路径参数 `userId` + `version` | `ApiResponse<Void>` | 逻辑删除；保留审计与历史业务关联，禁止物理删除。IOT 协同模式返回 `DEPLOYMENT_MODE_READONLY`。 |
 | `GET /api/v1/iam/roles/options` | `iam_role:read` | 可选范围参数 | `ApiResponse<List<RoleOptionVO>>` | 仅返回当前操作者可授予的角色，供受控下拉选择。 |
@@ -44,9 +44,10 @@
 | --- | --- | --- | --- |
 | `CreateUserRequest.username` | string | 管理用户登录名 | 必填；租户范围内唯一；禁止手机号、身份证等敏感字段作默认用户名。 |
 | `CreateUserRequest.displayName` | string | 后台展示姓名 | 必填；按中文姓名/组织展示规则脱敏。 |
-| `CreateUserRequest.roleIds` | array<number> | 初始绑定角色标识集合 | 至少一个；全部必须在操作者可授予范围内。 |
+| `CreateUserRequest.roleIds` | array<string> | 初始绑定角色标识集合 | 至少一个；全部必须在操作者可授予范围内；雪花 ID 统一序列化为字符串。 |
 | `UpdateUserRequest.version` | number | 乐观锁版本 | 必填；冲突返回 `VERSION_CONFLICT`。 |
-| `ReplaceUserRolesRequest.roleIds` | array<number> | 替换后的完整角色集合 | 必填；空集合仅在明确允许无角色保留账号时使用。 |
+| `ReplaceUserRolesRequest.roleIds` | array<string> | 替换后的完整角色集合 | 必填；雪花 ID 统一序列化为字符串；空集合仅在明确允许无角色保留账号时使用。 |
+| `ReplaceUserRolesRequest.version` | number | 乐观锁版本 | 必填；与其他写端点一致；并发替换冲突返回 409 `VERSION_CONFLICT`。 |
 | `ChangeUserStatusRequest.status` | string | 目标账户状态 | 枚举为 `active`/`locked`/`disabled`；状态迁移以 IAM 状态机为准（`active → locked` 锁定、`locked → active` 解锁、`active/locked → disabled` 停用、`disabled → active` 恢复需审计；最后管理员保护对应 `active → disabled` 受保护）。 |
 | `UserListVO.roleNames` | array<string> | 可见角色名称摘要 | 只返回操作者有权查看的角色信息。 |
 | `UserDetailVO.version` | number | 用户当前并发版本 | 前端编辑/删除时原样回传。 |
@@ -54,10 +55,10 @@
 
 ## 4. 后端、前端与测试落地
 
-- 后端目录固定为 `module/iam/{controller,dto,vo,service,mapper,entity,convert,exception}`；角色替换、状态迁移和越权授予校验由 `service` 编排，复杂规则分别进入 `validator`、`statemachine` 或 `policy`，Controller 不得直连 Mapper。
+- 后端目录固定为域包直挂 `iam/{controller,dto,vo,entity,mapper,service,service/impl,cache,util}`（无 `module/` 中间层）；角色替换、状态迁移和越权授予校验由 `service` 编排，`validator`/`statemachine`/`policy` 为规模化后演进方向，Controller 不得直连 Mapper。
 - 权限校验通过 `@HasPermission("iam_user:read|iam_user:write")` 注解声明在 Controller 方法上；部署模式写拦截在 `service` 层统一收口（读 `deployment_mode` 配置，IOT 协同模式下对 IOT 维护数据域的写方法抛出 `DEPLOYMENT_MODE_READONLY`）。
 - 前端目录固定为业务模块组织，例如 `views/iam/user/`、`api/iam/user.ts`、`stores/iam-user.ts`；列表、编辑、绑定角色、停用和删除均处理加载、空、失败、无权限、版本冲突与关闭态；IOT 协同模式下写按钮一律隐藏（依据 `/api/v1/auth/profile` 返回的 `deployment_mode`）。
-- 测试按“查询数据范围、创建幂等、用户名重复、角色越权、乐观锁冲突、最后管理员保护、逻辑删除不可见、审计字段完整、两档权限（read 可查不可写、write 全量）、IOT 协同模式写拦截返回 `DEPLOYMENT_MODE_READONLY`”逐项覆盖；每个测试类、方法、夹具和关键 Given/When/Then 代码块写中文说明。
+- 测试按“查询数据范围、创建幂等、用户名重复、角色越权、编辑与角色替换乐观锁冲突（409 `VERSION_CONFLICT`）、最后管理员保护、逻辑删除不可见、审计字段完整、两档权限（read 可查不可写、write 全量）、IOT 协同模式写拦截返回 `DEPLOYMENT_MODE_READONLY`”逐项覆盖；每个测试类、方法、夹具和关键 Given/When/Then 代码块写中文说明。
 
 ## 修订记录
 
@@ -65,3 +66,4 @@
 | --- | --- | --- |
 | 2026-08-14 | v1.0 | 建立用户与角色的统一资源接口边界，防止管理用户 IAM 与 M1 个人用户授权混用。 |
 | 2026-08-19 | v1.1 | 对齐两档权限模型（resource:read/write）与双模式设计：接口表新增权限码列，新增 §1.1 鉴权模型与 §1.2 双模式写拦截（`DEPLOYMENT_MODE_READONLY`），测试项补充两档权限与模式拦截覆盖。 |
+| 2026-08-20 | v1.2 | 06-文档不一致清单 A-6/C-1~C-4：对齐 iam-v1.yaml v1.2.0——`ReplaceUserRolesRequest` 补必填 `version` 乐观锁与 409 `VERSION_CONFLICT`；`roleIds` 类型由 `array<number>` 改为 `array<string>`（雪花 ID 统一序列化为字符串）；后端目录改为域包直挂 `iam/{controller,dto,vo,entity,mapper,service,service/impl,cache,util}`；测试项补角色替换乐观锁冲突。 |
