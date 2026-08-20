@@ -1,6 +1,6 @@
 # 单人 AI 协作开发与变更治理规范
 
-> 版本：v1.6
+> 版本：v1.7
 > 状态：现行规范
 > 生效日期：2026-08-13
 > 适用范围：充电运营平台的需求、代码、配置、测试、交付与文档。
@@ -34,13 +34,14 @@
 
 | 门禁 | 必邀评审子代理 | 评审焦点 |
 | --- | --- | --- |
+| Step 1 需求与验收 | `requirements_story_mapper` + 按域专项代理 | 菜单需求完备度矩阵（8 维度无留白）、三档标注（基线已定/推断-待确认/基线空白-新增）、验收条件可测性 |
 | Step 2 技术设计与契约 | 架构收敛三人组（fowler 服务拓扑 / kleppmann 一致性 / majors 可靠性），按域追加专项代理 | 服务边界、Schema 归属、事件一致性、单机资源 |
 | Step 3 后端与迁移 | kleppmann + 按域专项代理 | 幂等、回放、迁移前向兼容、跨服务写入禁令 |
 | Step 4 API 门禁 | `authorization_governance_specialist` + 按域专项代理 | 权限码矩阵、越权、错误码与契约同步 |
-| Step 5 前端 | `requirements_story_mapper` | 页面功能清单与菜单架构对齐、路由/按钮权限 |
+| Step 5 前端 | `requirements_story_mapper` + `frontend_experience_engineer` | 页面功能清单与菜单架构对齐、路由/按钮权限；七端目录、设计令牌、页面状态覆盖、API 客户端调用边界 |
 | Step 6 E2E/权限/异常 | `authorization_governance_specialist` + 按域专项代理 | 越权、异常、补偿、审计完整性 |
 
-**域专项代理强制会签触发：** 涉 MQTT/EMQX/设备/计量/遥测/V2G → `charging_iot_v2g_integration_specialist`；涉多租户/RBAC/数据范围/审计 → `authorization_governance_specialist`；涉企业资金/清分/租户结算/出款 → `carol-coye-benson-enterprise-funds-agent`；涉个人支付/预付资金/退款/权益 → `h-david-evans-personal-payments-agent`；涉需求拆解/范围/版本规划 → `requirements_story_mapper`。
+**域专项代理强制会签触发：** 涉 MQTT/EMQX/设备/计量/遥测/V2G → `charging_iot_v2g_integration_specialist`；涉多租户/RBAC/数据范围/审计 → `authorization_governance_specialist`；涉企业资金/清分/租户结算/出款 → `carol-coye-benson-enterprise-funds-agent`；涉个人支付/预付资金/退款/权益 → `h-david-evans-personal-payments-agent`；涉需求拆解/范围/版本规划 → `requirements_story_mapper`；涉前端七端工程结构/设计令牌/API 客户端边界 → `frontend_experience_engineer`；涉部署编排/备份恢复/可观测性/CI 供应链/安全与性能测试门禁设计 → `platform_reliability_data_architect`。
 
 **会签执行规则：**
 
@@ -103,3 +104,4 @@
 | 2026-08-14 | v1.4 | 用户批准 Git/SVN 双版本库与细粒度 SVN 提交要求。 | 新增双版本库一致性、提交和回滚规则。 |
 | 2026-08-14 | v1.5 | 用户说明 SVN 仅公司内网可用，并要求提交说明优先中文。 | 新增外网待同步、回公司补提与中文提交说明规则。 |
 | 2026-08-20 | v1.6 | 用户要求评审子代理只读会签从纸面落成强制门禁，防止单人协作退化为无外部视角的自证。 | 新增 §2.1：`.agents/` 为子代理定义唯一来源、Step 门禁与必邀评审子代理映射、域专项强制会签触发、纪要落盘 `delivery/audit/` 与三档标注规则。 |
+| 2026-08-20 | v1.7 | 反对者视角核查（DEC-20260820-006）：门禁映射补 Step 1（story_mapper，对齐总纲完备度矩阵）；Step 5 增 `frontend_experience_engineer` 双代理；域专项触发补前端工程与 `platform_reliability_data_architect` 两项，消除已定义未触发悬空。 | §2.1 映射表与触发条件扩充；子代理定义同步修正（kleppmann 旧服务名、authorization 旧权限模型措辞），判断原则不回退。 |

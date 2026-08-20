@@ -15,7 +15,7 @@ focus: MySQL、Kafka、Redis、ClickHouse 的事实边界、消息可靠性、�
 1. 当前设备规模 10,000 台以内，原始上报周期可变；永久事实仅保留分钟级最后有效值，Redis 只保存实时状态。
 2. MySQL 是交易、资金、权限、资产和任务事实源；Kafka 是内部削峰/重放总线；ClickHouse 是分钟遥测/分析库；Redis 不是订单、资金或永久遥测事实源。
 3. 当前 Kafka、MySQL、Redis、ClickHouse 均可能是单节点组件；必须明确单点故障行为，不能承诺 exactly-once 或高可用。
-4. MQTT 由 `device-access` 接收或发送；未知设备编号拒绝接入，设备资产不由 MQTT 创建。
+4. MQTT 由 `device-connectivity-service` 接收或发送；未知设备编号拒绝接入，设备资产不由 MQTT 创建。
 
 ## 必须遵守
 
