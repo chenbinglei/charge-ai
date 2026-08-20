@@ -2,7 +2,13 @@ package com.elink.evco.testkit.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.api.model.Ports;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.sql.DriverManager;
+import java.util.List;
 import java.util.Map;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -32,9 +38,13 @@ class MiddlewareSmokeIntegrationTest {
                     .withUsername("test")
                     .withPassword("test-password");
 
+    /** Kafka 宿主机固定绑定端口；类加载时先探测空闲端口，保证 advertised.listeners 与实际映射一致。 */
+    private static final int KAFKA_HOST_PORT = probeFreeHostPort();
+
     /**
      * W1 固定的单节点 KRaft Kafka；与 Compose 配置一致，避免 Testcontainers KafkaContainer 对 advertised.listeners
-     * 的非路由地址校验冲突。
+     * 的非路由地址校验冲突。 宿主机端口固定绑定且与 advertised.listeners 一致：Testcontainers 默认随机映射时， 客户端凭元数据回连通告地址（写死
+     * 9092）必然失配超时。
      */
     @Container
     static final GenericContainer<?> KAFKA =
@@ -50,12 +60,21 @@ class MiddlewareSmokeIntegrationTest {
                     .withEnv("KAFKA_CONTROLLER_LISTENER_NAMES", "CONTROLLER")
                     .withEnv("KAFKA_CONTROLLER_QUORUM_VOTERS", "1@localhost:9093")
                     .withEnv("KAFKA_LISTENERS", "PLAINTEXT://:9092,CONTROLLER://:9093")
-                    .withEnv("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092")
+                    .withEnv(
+                            "KAFKA_ADVERTISED_LISTENERS",
+                            "PLAINTEXT://localhost:" + KAFKA_HOST_PORT)
                     .withEnv("KAFKA_INTER_BROKER_LISTENER_NAME", "PLAINTEXT")
                     .withEnv("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
                     .withEnv("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "1")
                     .withEnv("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "1")
                     .withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false")
+                    .withCreateContainerCmdModifier(
+                            cmd ->
+                                    cmd.withPortBindings(
+                                            List.of(
+                                                    new PortBinding(
+                                                            Ports.Binding.bindPort(KAFKA_HOST_PORT),
+                                                            ExposedPort.tcp(9092)))))
                     .waitingFor(
                             org.testcontainers.containers.wait.strategy.Wait.forLogMessage(
                                             ".*Transition from STARTING to STARTED.*", 1)
@@ -98,5 +117,14 @@ class MiddlewareSmokeIntegrationTest {
 
         assertThat(REDIS.execInContainer("redis-cli", "ping").getStdout()).contains("PONG");
         assertThat(EMQX.execInContainer("emqx", "ctl", "status").getExitCode()).isZero();
+    }
+
+    /** 探测一个当前空闲的宿主机 TCP 端口；Kafka 固定绑定该端口后 advertised.listeners 才能如实通告。 */
+    private static int probeFreeHostPort() {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        } catch (IOException e) {
+            throw new IllegalStateException("无法探测空闲宿主机端口供 Kafka 固定绑定", e);
+        }
     }
 }
