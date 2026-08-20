@@ -14,8 +14,9 @@ Before planning, implementation, review, or a status report for the charging pla
 2. `ev-charging-operations/docs/requirements/充电运营平台12周全功能交付实施计划-v3.md` — current approved scope, dates and delivery sequence.
 3. `ev-charging-operations/delivery/execution/00-执行总控台账.md` — current module, forecast, blockers and next action.
 4. `ev-charging-operations/delivery/execution/01-模块路线图与依赖矩阵.md` — prerequisites and mandatory regression scope.
-5. For a change, `02-变更与审批日志.md`; for completed work, `03-模块完成记录.md` and `04-一致性核对清单.md`.
-6. `ev-charging-operations/delivery/execution/05-SVN待同步清单.md` — company-intranet SVN availability and any offsite backlog.
+5. `ev-charging-operations/docs/standards/开发流程总纲-v1.md` — the single process authority (DEC-20260820-002): eight-step serial gates from Step 0 session recovery to Step 7 completion evidence, per-step required actions/artifacts/release criteria, the menu-requirement completeness matrix, and the per-step exit checklist that must be shown item by item before any step is declared complete.
+6. For a change, `02-变更与审批日志.md`; for completed work, `03-模块完成记录.md` and `04-一致性核对清单.md`.
+7. `ev-charging-operations/delivery/execution/05-SVN待同步清单.md` — company-intranet SVN availability and any offsite backlog.
 
 The approved target is 2026-08-17 to 2026-11-20, with 60 committed development workdays and no scheduled development from 2026-09-25 through 2026-10-07. This is a target, not authorization to cut scope or test gates. Weekends are not committed capacity; any overtime, schedule delay, new feature, or change to an accepted module requires the user's recorded approval.
 
