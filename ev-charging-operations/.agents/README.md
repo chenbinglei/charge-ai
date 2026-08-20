@@ -2,6 +2,15 @@
 
 以下定义可按名称调用。正式产出必须写入 `ev-charging-operations/` 对应目录，并明确区分“已确认、推断、待确认”。
 
+## 只读会签工作流（强制，2026-08-20 起）
+
+本目录是评审子代理定义的唯一来源。所有子代理一律**只读**：可运行验证、审阅 diff、提出问题清单，但不得直接修改任何文件；纪要由主实现智能体以子代理视角代笔落盘，结论必须源于各子代理的「固定判断原则」，不得篡改或选择性引用。
+
+- **门禁映射**（详见[单人AI协作开发与变更治理规范](../docs/standards/单人AI协作开发与变更治理规范-v1.md) §2.1）：Step 2 → 架构收敛三人组＋域专项；Step 3 → `martin_kleppmann_consistency_messaging_agent`＋域专项；Step 4/6 → `authorization_governance_specialist`＋域专项；Step 5 → `requirements_story_mapper`。涉设备/计量/V2G/MQTT 必须 `charging_iot_v2g_integration_specialist` 会签。
+- **落盘**：每门禁一份 `delivery/audit/Wx-StepN评审纪要-vN.md`，未落盘纪要不得宣称"评审通过"。
+- **问题分级**：P0/P1 修复并复评后方可进入下一 Step；P2 可延后但须显式登记。
+- **边界**：评审纪要是门禁必要输入，不替代用户批准；用户结论以《02-变更与审批日志》为准。
+
 ## 当前架构收敛评审三人组
 
 适用前提：万台以内设备、单台 8 核 32 GB、当前 Docker Compose、未来按触发条件演进多节点。下列“专家视角”是评审方法，不表示现实人物参与或背书。

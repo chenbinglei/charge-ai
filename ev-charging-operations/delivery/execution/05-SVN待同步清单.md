@@ -2,7 +2,7 @@
 
 > 状态：现行
 > 适用：SVN 仅可在公司内网访问时，外网已完成变更的补提与审计。
-> 当前状态：0 项待同步。最近完成的 SVN 提交为 r10533（根目录 svn:ignore）；W1 工程跑道全部变更已同步至 SVN r10530–r10533。本清单自身的证据提交不纳入该口径，实际状态仍以 `svn status -u` 和 `svn log` 为准，避免递归的"最近 revision"表述。
+> 当前状态：4 项待同步（SVN-20260820-001 至 004）。最近完成的 SVN 提交为 r10557（revoke 租户归属校验，对应 Git `b88a2c4`）；W1 全部变更同步至 r10530–r10533，W2 Step 3/4 及其契约修复同步至 r10554–r10557。本清单自身的证据提交不纳入该口径，实际状态仍以 `svn status -u` 和 `svn log` 为准，避免递归的"最近 revision"表述。
 
 ## 使用规则
 
@@ -18,6 +18,10 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | SVN-20260816-001 | 2026-08-16 | 统一 W1 入口状态、建立并按 P0/P1 补充《W1 工程跑道需求与验收包》、增加最终决策表、记录 Step 1 批准、增加 Step 2 技术设计与公共契约草案、同步现役导航、变更日志、完成记录和一致性入口；仅文档/契约草案，无生产代码、业务迁移或运行时 Topic。 | `1216903`, `5f65c60`, `93340c7`, `8656d2c`, `65e19d2`, `a3ccd88`, `3cd8954` | `git diff --check`；JSON Schema 解析；YAML 解析；Markdown 本地链接检查。 | `docs: 增加W1工程跑道技术设计与公共契约草案` | **已同步 r10530** | 2026-08-17 |
 | SVN-20260816-002 | 2026-08-16 | W1 无业务工程底座：Maven Wrapper/质量与 SBOM、Flyway 空迁移入口和检查、通用 API/TraceId/幂等/审计、契约检查、Kafka/Outbox/Inbox Testkit、Compose 四类 profile、前端七端 workspace/三主题 Token、CI 与安全扫描入口；同步 SVN 忽略 `node_modules`、`dist`、`artifacts` 本地生成物。无业务页面、业务 DDL/Flyway、业务 API、运行时业务 Topic 或消费者。 | `2572664`, `043b763` | Maven `verify`；前端 `pnpm run verify`、`pnpm run sbom`；契约/迁移/敏感信息检查；Compose `config --quiet` 与实际健康检查通过；Testcontainers 中间件探针通过。Git 已推送至远端 `origin/agent/initial-platform-architecture`。 | `feat: 建立W1工程跑道基础` | **已同步 r10531–r10533** | 2026-08-17 |
+| SVN-20260820-001 | 2026-08-19 | W2 后端质量整备：platform-service `common` 抽取为共享库 `backend/libraries/starter`（artifactId evco-starter，基础层＋管理端层，`evco.web.security.enabled` 开关）、10 个 service 接口/impl 分离、controller 瘦身（幂等模板/工具归位）、W1 遗留空包清理、Spotless+Checkstyle 全量格式统一。 | `d31c3b0` | Maven 全量 `verify`：12 模块 BUILD SUCCESS，测试 32/32 通过（独立模式集成 20、IOT 协同模式集成 8、架构守护 3、W0 冒烟 1），Checkstyle/Spotless/JaCoCo/SBOM 门禁通过。Git 已推送至远端。 | `refactor: W2后端质量整备——common抽取evco-starter共享库、service接口实现分离、controller瘦身与格式统一` | 待同步 | — |
+| SVN-20260820-002 | 2026-08-20 | testkit Kafka Testcontainers 修复：探测空闲宿主机端口并固定绑定容器 9092，使 `advertised.listeners` 与映射端口一致，修复客户端回连超时；过时 `withPortBindings(PortBinding...)` 改 `List` 重载。 | `34ed61f` | 12 模块 `mvn install package` BUILD SUCCESS（含 Spotless/Checkstyle）；集成测试 `MiddlewareSmokeIntegrationTest` 通过（Kafka AdminClient clusterId、MySQL/Redis/EMQX 连通）；platform-service 32 项测试通过。Git 已推送至远端。 | `fix: Kafka测试容器探测空闲端口固定绑定，修复advertised.listeners与映射端口不一致导致的回连超时` | 待同步 | — |
+| SVN-20260820-003 | 2026-08-20 | 文档不一致清单 16 项处置（A 包结构 6、B starter 登记 3、C 契约同步 6、D 确认 1）：全栈研发工程规范 v1.4、研发工程规范基线 v1.5、架构与数据分库设计 v1.9、W1/W2 技术设计包、IAM 接口规范 v1.2、认证与SSO接口规范 v1.2、文档导航 v1.5 升版；归档规则直接修订；新增《P1配置接口规范》《个人用户主档接口规范》；清单回填处置结果升 v1.1。 | `68314a3` | 版本号与清单声明逐文件复核一致（7 份升版 + 2 份直接修订落地 + 2 份新增存在）；Git 已推送至远端。 | `docs: 处置文档不一致清单16项，包结构统一域包直挂、登记evco-starter、接口规范与契约同步` | 待同步 | — |
+| SVN-20260820-004 | 2026-08-20 | 治理补强：评审子代理只读会签机制强制化——治理规范升 v1.6（§2.1 门禁↔子代理映射、纪要落盘 `delivery/audit/` 规则）、根 AGENTS.md 增设 Mandatory read-only review-agent countersign 章节、`.agents/README.md` 补只读会签工作流、总控台账 v1.38 回填推送与处置状态、审批日志登记 DEC-20260820-001。 | 待生成 | 文档链接与版本号复核；机制与 `.agents/` 既有定义一致性核对。 | `docs: 评审子代理只读会签机制强制化并补登台账（治理规范v1.6）` | 待同步 | — |
 
 ## 历史记录
 
