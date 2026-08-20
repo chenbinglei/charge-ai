@@ -64,10 +64,10 @@ public class IamAuditLog {
     /** 脱敏操作摘要；不含密码哈希、令牌原文等敏感材料。 */
     private String summary;
 
-    /** 操作来源 IP；登录/SSO 审计必填。 */
+    /** 操作来源 IP（IPv4；纯 IPv6 来源存 NULL）；登录/SSO 审计必填。 */
     private String ip;
 
-    /** 操作时间（UTC），插入自动填充。 */
+    /** 操作时间（北京时间），插入自动填充。 */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 }

@@ -16,7 +16,6 @@ import com.elink.evco.web.security.JwtTokenProvider;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.List;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -88,7 +87,7 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public IssuedTokens issue(IamUser user, String authType, String ip, String userAgent) {
         // 1. 建立 auth_session 会话记录。
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime now = LocalDateTime.now();
         AuthSession session = new AuthSession();
         session.setUserId(user.getId());
         session.setAuthType(authType);
@@ -155,7 +154,7 @@ public class SessionServiceImpl implements SessionService {
                         new LambdaQueryWrapper<AuthSession>()
                                 .eq(AuthSession::getId, sessionId)
                                 .eq(AuthSession::getStatus, AuthSession.STATUS_ACTIVE)
-                                .gt(AuthSession::getExpiresAt, LocalDateTime.now(ZoneOffset.UTC)));
+                                .gt(AuthSession::getExpiresAt, LocalDateTime.now()));
         if (session == null) {
             return null;
         }
@@ -191,7 +190,7 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public void revokeSession(Long sessionId) {
         // 1. 会话置 revoked。
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime now = LocalDateTime.now();
         sessionMapper.update(
                 null,
                 new LambdaUpdateWrapper<AuthSession>()
@@ -222,7 +221,7 @@ public class SessionServiceImpl implements SessionService {
      */
     @Override
     public void slide(Long sessionId) {
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime now = LocalDateTime.now();
         sessionMapper.update(
                 null,
                 new LambdaUpdateWrapper<AuthSession>()

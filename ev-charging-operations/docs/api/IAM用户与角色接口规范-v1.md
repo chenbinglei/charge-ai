@@ -1,13 +1,13 @@
 # IAM 用户与角色接口规范
 
-> 版本：v1.2
+> 版本：v1.3
 > 状态：W2 模块实施前的强制接口设计基线；本文不是已发布运行时 API。
 > 依据：DEC-20260814-021、《[API 通用接口规范](API通用接口规范-v1.md)》和现行 12 周计划。
 > 边界：仅覆盖 P1/P2 等管理端的 IAM 管理用户与角色绑定；M1 个人充电用户不配置页面或功能角色。
 
 ## 1. 资源边界
 
-- `iam user` 是平台管理员、租户管理员、运营人员等受授权后台主体；其角色、数据范围、状态和审计由 IAM 模块维护。
+- `iam user` 是平台管理员、租户管理员、租户普通用户等各级受授权管理主体（企业级成员账号随 W7 交付）；**平台级仅平台管理员一种角色**（2026-08-20 用户确认，不存在平台普通用户/运营人员角色）；其角色、数据范围、状态和审计由 IAM 模块维护。
 - M1 个人用户的渠道身份、业务资格、订单、钱包和权益属于个人用户主档与业务规则，不得复用本接口配置页面/功能角色。
 - 用户与角色为多对多关系；用户角色的新增、替换、禁用和删除都必须保留操作审计，并执行租户/平台数据范围校验。
 
@@ -31,7 +31,7 @@
 | --- | --- | --- | --- | --- |
 | `GET /api/v1/iam/users` | `iam_user:read` | `UserPageQuery` | `ApiResponse<PageResponse<UserListVO>>` | 按用户名、姓名、状态、角色和数据范围分页查询；不得返回密码、令牌或敏感认证材料。 |
 | `GET /api/v1/iam/users/{userId}` | `iam_user:read` | 路径参数 `userId` | `ApiResponse<UserDetailVO>` | 查询单一可见用户及受控角色摘要。 |
-| `POST /api/v1/iam/users` | `iam_user:write` | `CreateUserRequest` + `X-Idempotency-Key` | `ApiResponse<UserDetailVO>` | 新增管理用户并绑定初始角色；用户名在所属租户范围内唯一。IOT 协同模式返回 `DEPLOYMENT_MODE_READONLY`。 |
+| `POST /api/v1/iam/users` | `iam_user:write` | `CreateUserRequest` + `X-Idempotency-Key` | `ApiResponse<UserDetailVO>` | 新增管理用户并绑定初始角色；用户名在所属租户范围内唯一。**W2 语境下创建的是平台级管理用户（平台管理员账号，`tenantId` 必须省略）；租户级用户创建入口随 W7 租户管理菜单交付**。IOT 协同模式返回 `DEPLOYMENT_MODE_READONLY`。 |
 | `PUT /api/v1/iam/users/{userId}` | `iam_user:write` | `UpdateUserRequest` | `ApiResponse<UserDetailVO>` | 编辑允许维护的资料与版本；不通过本接口重置认证凭据。IOT 协同模式返回 `DEPLOYMENT_MODE_READONLY`。 |
 | `PUT /api/v1/iam/users/{userId}/roles` | `iam_user:write` | `ReplaceUserRolesRequest`（含 `version`） | `ApiResponse<UserRoleBindingVO>` | 以完整角色集合替换绑定；需校验操作者不可越权授予角色；携带 `version` 乐观锁，并发替换冲突返回 409 `VERSION_CONFLICT`。IOT 协同模式返回 `DEPLOYMENT_MODE_READONLY`。 |
 | `PATCH /api/v1/iam/users/{userId}/status` | `iam_user:write` | `ChangeUserStatusRequest` | `ApiResponse<UserStatusVO>` | 启用、停用或锁定用户；不得停用最后一个可用平台超级管理员。IOT 协同模式返回 `DEPLOYMENT_MODE_READONLY`。 |
@@ -67,3 +67,4 @@
 | 2026-08-14 | v1.0 | 建立用户与角色的统一资源接口边界，防止管理用户 IAM 与 M1 个人用户授权混用。 |
 | 2026-08-19 | v1.1 | 对齐两档权限模型（resource:read/write）与双模式设计：接口表新增权限码列，新增 §1.1 鉴权模型与 §1.2 双模式写拦截（`DEPLOYMENT_MODE_READONLY`），测试项补充两档权限与模式拦截覆盖。 |
 | 2026-08-20 | v1.2 | 06-文档不一致清单 A-6/C-1~C-4：对齐 iam-v1.yaml v1.2.0——`ReplaceUserRolesRequest` 补必填 `version` 乐观锁与 409 `VERSION_CONFLICT`；`roleIds` 类型由 `array<number>` 改为 `array<string>`（雪花 ID 统一序列化为字符串）；后端目录改为域包直挂 `iam/{controller,dto,vo,entity,mapper,service,service/impl,cache,util}`；测试项补角色替换乐观锁冲突。 |
+| 2026-08-20 | v1.3 | W2 API 检查报告 F1/F2 处置（用户批准）：§1 「运营人员」表述修正为「平台管理员、租户管理员、租户普通用户等各级受授权管理主体（企业级随 W7 交付）」并固化「平台级仅平台管理员」权威事实；§2 POST 行明确 W2 创建的是平台级管理用户（`tenantId` 必须省略）、租户级入口随 W7 租户管理交付。 |

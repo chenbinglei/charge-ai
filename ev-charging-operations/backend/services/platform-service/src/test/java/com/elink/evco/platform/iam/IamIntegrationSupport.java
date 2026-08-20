@@ -50,7 +50,7 @@ public abstract class IamIntegrationSupport {
     /** 种子口令明文；测试内统一使用。 */
     static final String SEED_PASSWORD = "Seed-Passw0rd!";
 
-    /** 单例 MySQL 容器；类加载即启动，全 JVM 共享。 */
+    /** 单例 MySQL 容器；类加载即启动，全 JVM 共享；会话时区对齐北京（DEC-20260820-016）。 */
     static final MySQLContainer<?> MYSQL =
             new MySQLContainer<>(
                             DockerImageName.parse(
@@ -58,7 +58,8 @@ public abstract class IamIntegrationSupport {
                                     .asCompatibleSubstituteFor("mysql"))
                     .withDatabaseName("evco_iam")
                     .withUsername("test")
-                    .withPassword("test-password");
+                    .withPassword("test-password")
+                    .withCommand("--default-time-zone=+08:00");
 
     /** 单例 Redis 容器；类加载即启动，全 JVM 共享。 */
     static final GenericContainer<?> REDIS =

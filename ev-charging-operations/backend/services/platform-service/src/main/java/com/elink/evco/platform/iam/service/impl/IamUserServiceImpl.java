@@ -32,7 +32,6 @@ import com.elink.evco.web.error.PlatformErrorCode;
 import com.elink.evco.web.security.AuthContext;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -280,7 +279,7 @@ public class IamUserServiceImpl implements IamUserService {
                                 .eq(IamUser::getId, user.getId())
                                 .eq(IamUser::getVersion, version)
                                 .isNull(IamUser::getDeletedAt)
-                                .set(IamUser::getDeletedAt, LocalDateTime.now(ZoneOffset.UTC))
+                                .set(IamUser::getDeletedAt, LocalDateTime.now())
                                 .set(IamUser::getVersion, version + 1)
                                 .setSql("updated_at = updated_at"));
         if (updated == 0) {
@@ -315,7 +314,7 @@ public class IamUserServiceImpl implements IamUserService {
         List<IamRole> roles = validateGrantableRoles(roleIds, user.getTenantId());
         // 2. 乐观锁校验并自增版本：权限变更必须有并发冲突信号，
         //    条件更新失败说明期间发生并发修改，返回 VERSION_CONFLICT。
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime now = LocalDateTime.now();
         int bumped =
                 userMapper.update(
                         null,
@@ -359,7 +358,7 @@ public class IamUserServiceImpl implements IamUserService {
             protectLastPlatformSuper(user, target.equals(IamUser.STATUS_LOCKED) ? "锁定" : "停用");
         }
         // 3. 乐观锁条件更新：按目标状态附加字段（锁定写 locked_until；激活清空锁定与失败计数）。
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime now = LocalDateTime.now();
         LambdaUpdateWrapper<IamUser> wrapper =
                 new LambdaUpdateWrapper<IamUser>()
                         .eq(IamUser::getId, userId)

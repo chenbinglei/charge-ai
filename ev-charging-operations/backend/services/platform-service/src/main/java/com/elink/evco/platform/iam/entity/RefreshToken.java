@@ -40,14 +40,14 @@ public class RefreshToken {
     /** 状态：active/used/revoked。 */
     private String status;
 
-    /** 过期时间（UTC）。 */
+    /** 过期时间（北京时间）。 */
     private LocalDateTime expiresAt;
 
-    /** 创建时间（UTC），插入自动填充。 */
+    /** 创建时间（北京时间），插入自动填充。 */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /** 更新时间（UTC），插入/更新自动填充。 */
+    /** 更新时间（北京时间），插入/更新自动填充。 */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

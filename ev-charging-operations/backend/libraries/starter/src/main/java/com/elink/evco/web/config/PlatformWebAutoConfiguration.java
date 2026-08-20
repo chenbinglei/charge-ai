@@ -13,14 +13,19 @@ import com.elink.evco.web.security.PermissionInterceptor;
 import com.elink.evco.web.security.SessionValidationPort;
 import com.elink.evco.web.trace.TraceIdFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -41,6 +46,30 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @AutoConfiguration
 @EnableConfigurationProperties({AppProperties.class, WebSecurityProperties.class})
 public class PlatformWebAutoConfiguration {
+
+    /** 平台统一业务时区（DEC-20260820-016）：北京时间；落库与 API 输出均用本时区。 */
+    public static final ZoneId PLATFORM_ZONE = ZoneId.of("Asia/Shanghai");
+
+    static {
+        // 类加载即固定 JVM 默认时区，业务代码直接 LocalDateTime.now() 即北京时间，
+        // 不依赖部署环境（容器默认 UTC 等）的时区设置。
+        TimeZone.setDefault(TimeZone.getTimeZone(PLATFORM_ZONE));
+    }
+
+    /**
+     * Jackson 时间格式定制：LocalDateTime 统一「yyyy-MM-dd HH:mm:ss」秒级序列化，
+     * 与库内 DATETIME 秒级精度一致（DEC-20260820-016）。
+     *
+     * @return Jackson 定制器。
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "evcoLocalDateTimeCustomizer")
+    public Jackson2ObjectMapperBuilderCustomizer evcoLocalDateTimeCustomizer() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return builder ->
+                builder.serializers(new LocalDateTimeSerializer(formatter))
+                        .deserializers(new LocalDateTimeDeserializer(formatter));
+    }
 
     /**
      * 链路追踪过滤器注册；最高优先级，先于鉴权建立 traceId。
@@ -117,7 +146,7 @@ public class PlatformWebAutoConfiguration {
     }
 
     /**
-     * 审计时间自动填充：insert 填 created_at/updated_at，update 刷新 updated_at（UTC）。
+     * 审计时间自动填充：insert 填 created_at/updated_at，update 刷新 updated_at（北京时间）。
      *
      * @return 元对象填充处理器。
      */
@@ -127,18 +156,14 @@ public class PlatformWebAutoConfiguration {
         return new MetaObjectHandler() {
             @Override
             public void insertFill(org.apache.ibatis.reflection.MetaObject metaObject) {
-                LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+                LocalDateTime now = LocalDateTime.now();
                 strictInsertFill(metaObject, "createdAt", LocalDateTime.class, now);
                 strictInsertFill(metaObject, "updatedAt", LocalDateTime.class, now);
             }
 
             @Override
             public void updateFill(org.apache.ibatis.reflection.MetaObject metaObject) {
-                strictUpdateFill(
-                        metaObject,
-                        "updatedAt",
-                        LocalDateTime.class,
-                        LocalDateTime.now(ZoneOffset.UTC));
+                strictUpdateFill(metaObject, "updatedAt", LocalDateTime.class, LocalDateTime.now());
             }
         };
     }

@@ -41,9 +41,6 @@ class IamIotCollaborativeIntegrationTest extends IamIntegrationSupport {
     /** 服务间凭证（与测试属性一致）。 */
     private static final String SSO_API_KEY = "itest-sso-api-key";
 
-    /** SSO 目标用户的 IOT 侧用户 ID。 */
-    private static final long IOT_USER_ID = 2069700000000007777L;
-
     /** ticket 序号；保证同 JVM 内多次推送互不冲突。 */
     private static final AtomicLong TICKET_SEQ = new AtomicLong();
 
@@ -70,11 +67,10 @@ class IamIotCollaborativeIntegrationTest extends IamIntegrationSupport {
                         IamUser.TYPE_NORMAL,
                         SYSTEM_TENANT_ID,
                         List.of(PERM_IAM_USER_READ));
-        // 覆写为 IOT 推送身份（source=IOT_PUSH + iot_user_id）。
+        // 覆写为 IOT 推送身份（source=IOT_PUSH）；IOT 用户 ID 即本表主键，无独立映射列。
         IamUser patch = new IamUser();
         patch.setId(ssoUser.getId());
         patch.setSource(IamUser.SOURCE_IOT_PUSH);
-        patch.setIotUserId(IOT_USER_ID);
         userMapper.updateById(patch);
         adminToken = login("iot_admin", SEED_PASSWORD, SYSTEM_TENANT_ID);
     }
@@ -217,7 +213,8 @@ class IamIotCollaborativeIntegrationTest extends IamIntegrationSupport {
      * @return 请求体。
      */
     private Map<String, Object> ticketPushBody() {
-        return ticketPushBody(IOT_USER_ID);
+        // IOT 协同模式下推送的 iotUserId 即本地 iam_user 主键。
+        return ticketPushBody(ssoUser.getId());
     }
 
     /**
@@ -242,7 +239,7 @@ class IamIotCollaborativeIntegrationTest extends IamIntegrationSupport {
      * @return ticket 原文。
      */
     private String pushTicket(String apiKey) {
-        return pushTicket(apiKey, IOT_USER_ID);
+        return pushTicket(apiKey, ssoUser.getId());
     }
 
     /**

@@ -43,20 +43,20 @@ public class AuthSession {
     /** 状态：active/expired/revoked。 */
     private String status;
 
-    /** 登录来源 IP（IPv4/IPv6）。 */
+    /** 登录来源 IP（IPv4；纯 IPv6 来源存 NULL）。 */
     private String ip;
 
     /** 登录端 User-Agent 摘要。 */
     private String userAgent;
 
-    /** 会话过期时间（UTC）；随 refresh 滑动续期。 */
+    /** 会话过期时间（北京时间）；随 refresh 滑动续期。 */
     private LocalDateTime expiresAt;
 
-    /** 创建时间（UTC），插入自动填充。 */
+    /** 创建时间（北京时间），插入自动填充。 */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /** 更新时间（UTC），插入/更新自动填充。 */
+    /** 更新时间（北京时间），插入/更新自动填充。 */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

@@ -27,9 +27,9 @@ CREATE TABLE IF NOT EXISTS `iam_permission` (
     `status`      VARCHAR(16)  NOT NULL DEFAULT 'ACTIVE' COMMENT '枚举 ACTIVE/INACTIVE；关闭态功能（银联/银盛条件渠道、V2G 真实放电、提现等）初始化为 INACTIVE',
     `phase`       VARCHAR(8)   NULL     COMMENT '首次交付工作周，如 W2/W3/W7',
     `source`      VARCHAR(16)  NOT NULL DEFAULT 'PLATFORM' COMMENT '数据来源：PLATFORM（平台预置）/ IOT_PUSH（IOT 协同模式推送）',
-    `created_at`  DATETIME(3)  NOT NULL COMMENT '创建时间（UTC）',
-    `updated_at`  DATETIME(3)  NOT NULL COMMENT '更新时间（UTC）',
-    `deleted_at`  DATETIME(3)  NULL     COMMENT '逻辑删除标记；内置权限不可删除',
+    `created_at`  DATETIME  NOT NULL COMMENT '创建时间（北京时间）',
+    `updated_at`  DATETIME  NOT NULL COMMENT '更新时间（北京时间）',
+    `deleted_at`  DATETIME  NULL     COMMENT '逻辑删除标记；内置权限不可删除',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_permission_code` (`code`),
     KEY `idx_permission_resource` (`resource`),
@@ -52,9 +52,9 @@ CREATE TABLE IF NOT EXISTS `iam_permission_policy` (
     `builtin`       TINYINT      NOT NULL DEFAULT 0 COMMENT '预置核心策略不可删',
     `status`        VARCHAR(16)  NOT NULL DEFAULT 'ACTIVE' COMMENT '枚举 ACTIVE/DISABLED',
     `source`        VARCHAR(16)  NOT NULL DEFAULT 'PLATFORM' COMMENT '数据来源：PLATFORM/IOT_PUSH',
-    `created_at`    DATETIME(3)  NOT NULL COMMENT '创建时间（UTC）',
-    `updated_at`    DATETIME(3)  NOT NULL COMMENT '更新时间（UTC）',
-    `deleted_at`    DATETIME(3)  NULL     COMMENT '逻辑删除标记；builtin=1 的预置策略不可删除',
+    `created_at`    DATETIME  NOT NULL COMMENT '创建时间（北京时间）',
+    `updated_at`    DATETIME  NOT NULL COMMENT '更新时间（北京时间）',
+    `deleted_at`    DATETIME  NULL     COMMENT '逻辑删除标记；builtin=1 的预置策略不可删除',
     `active_code`   VARCHAR(64)  GENERATED ALWAYS AS (CASE WHEN `deleted_at` IS NULL THEN `code` ELSE NULL END) STORED COMMENT '未删除策略编码，软删后唯一约束自动释放' NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_policy_tenant_active_code` (`tenant_id_key`, `active_code`),
@@ -110,9 +110,9 @@ CREATE TABLE IF NOT EXISTS `iam_org_data_scope` (
     `access`          VARCHAR(8)  NOT NULL COMMENT '访问级别：READ/WRITE',
     `include_sub_org` TINYINT     NOT NULL DEFAULT 0 COMMENT '是否包含子组织',
     `source`          VARCHAR(16) NOT NULL DEFAULT 'PLATFORM' COMMENT '数据来源：PLATFORM/IOT_PUSH',
-    `created_at`      DATETIME(3) NOT NULL COMMENT '创建时间（UTC）',
-    `updated_at`      DATETIME(3) NOT NULL COMMENT '更新时间（UTC）',
-    `deleted_at`      DATETIME(3) NULL     COMMENT '逻辑删除标记',
+    `created_at`      DATETIME NOT NULL COMMENT '创建时间（北京时间）',
+    `updated_at`      DATETIME NOT NULL COMMENT '更新时间（北京时间）',
+    `deleted_at`      DATETIME NULL     COMMENT '逻辑删除标记',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_org_data_scope` (`org_id`, `station_id`),
     KEY `idx_org_data_scope_station` (`station_id`)
@@ -127,9 +127,9 @@ CREATE TABLE IF NOT EXISTS `iam_tenant_data_scope` (
     `station_id` BIGINT      NOT NULL COMMENT '站点 ID',
     `access`     VARCHAR(8)  NOT NULL COMMENT '访问级别：READ/WRITE',
     `source`     VARCHAR(16) NOT NULL DEFAULT 'PLATFORM' COMMENT '数据来源：PLATFORM/IOT_PUSH',
-    `created_at` DATETIME(3) NOT NULL COMMENT '创建时间（UTC）',
-    `updated_at` DATETIME(3) NOT NULL COMMENT '更新时间（UTC）',
-    `deleted_at` DATETIME(3) NULL     COMMENT '逻辑删除标记',
+    `created_at` DATETIME NOT NULL COMMENT '创建时间（北京时间）',
+    `updated_at` DATETIME NOT NULL COMMENT '更新时间（北京时间）',
+    `deleted_at` DATETIME NULL     COMMENT '逻辑删除标记',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_tenant_data_scope` (`tenant_id`, `station_id`, `access`),
     KEY `idx_tenant_data_scope_station` (`station_id`)
@@ -144,9 +144,9 @@ CREATE TABLE IF NOT EXISTS `iam_tenant_grant` (
     `tenant_id`     BIGINT      NOT NULL COMMENT '租户 ID',
     `permission_id` BIGINT      NOT NULL COMMENT '权限 ID（iam_permission）',
     `source`        VARCHAR(16) NOT NULL DEFAULT 'PLATFORM' COMMENT '数据来源：PLATFORM/IOT_PUSH',
-    `created_at`    DATETIME(3) NOT NULL COMMENT '创建时间（UTC）',
-    `updated_at`    DATETIME(3) NOT NULL COMMENT '更新时间（UTC）',
-    `deleted_at`    DATETIME(3) NULL     COMMENT '逻辑删除标记',
+    `created_at`    DATETIME NOT NULL COMMENT '创建时间（北京时间）',
+    `updated_at`    DATETIME NOT NULL COMMENT '更新时间（北京时间）',
+    `deleted_at`    DATETIME NULL     COMMENT '逻辑删除标记',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_tenant_grant` (`tenant_id`, `permission_id`),
     KEY `idx_tenant_grant_permission` (`permission_id`)
@@ -157,7 +157,7 @@ CREATE TABLE IF NOT EXISTS `iam_tenant_grant` (
 --    ID 使用保留段 1000000000000000001+，不与运行时雪花 ID 冲突
 --    W3-W11 权限由各自交付周迁移追加；本脚本幂等可重复执行
 -- ============================================================
-SET @now := UTC_TIMESTAMP(3);
+SET @now := NOW();
 
 INSERT INTO `iam_permission`
     (`id`, `code`, `name`, `resource`, `action`, `scope`, `menu_path`, `description`, `is_builtin`, `status`, `phase`, `source`, `created_at`, `updated_at`)

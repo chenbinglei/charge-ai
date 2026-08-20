@@ -1,8 +1,9 @@
 # 认证与 SSO 接口规范
 
-> 版本：v1.2
+> 版本：v1.3
 > 状态：W2 模块实施前的强制接口设计基线；本文不是已发布运行时 API。
-> 依据：[auth-v1.yaml](../../contracts/openapi/auth-v1.yaml) v1.2.0（全部 200 响应统一 ApiResponse 信封；m1/wechat-mock 端点标注交付批次依赖）、《[API 通用接口规范](API通用接口规范-v1.md)》、《[W2 技术设计与契约包](../design/W2-IAM个人身份与配置技术设计与契约包.md)》§8 双模式设计。
+> 依据：[auth-v1.yaml](../../contracts/openapi/auth-v1.yaml) v1.3.0（全部 200 响应统一 ApiResponse 信封；m1/wechat-mock 端点标注交付批次依赖）、《[API 通用接口规范](API通用接口规范-v1.md)》、《[W2 技术设计与契约包](../design/W2-IAM个人身份与配置技术设计与契约包.md)》§8 双模式设计。
+> 变更：v1.3（DEC-20260820-016）删除 `iam_user.iot_user_id` 独立映射列——IOT 协同模式推送用户沿用 IOT 用户 ID 作 `iam_user` 主键，SSO 换会话按主键定位；时间字段统一北京时间（Asia/Shanghai）秒级。
 > 边界：覆盖 P1/P2 管理端认证（登录、图形验证码、SSO 免登录、profile）；M1 个人用户微信登录见 auth-v1.yaml 的 m1/wechat-mock 端点，不在本文展开。
 
 ## 1. 资源边界
@@ -32,7 +33,7 @@
 | `LoginRequest.captchaId` | string | 图形验证码标识 | 必填；来自 `GET /api/v1/auth/captcha`。 |
 | `LoginRequest.captchaCode` | string | 图形验证码内容 | 必填；4-6 位，大小写不敏感，一次性校验。 |
 | `SsoTicketPushRequest.ticket` | string | 一次性票据 | 必填；≥32 字符随机串；TTL 120 秒；一次性使用。 |
-| `SsoTicketPushRequest.iotUserId` | string | IOT 侧用户 ID | 必填；P1 按 `iam_user.iot_user_id`（source=IOT_PUSH）定位本地用户。 |
+| `SsoTicketPushRequest.iotUserId` | string | IOT 侧用户 ID | 必填；即 `iam_user` 主键（IOT 协同模式推送用户沿用 IOT ID 作主键，source=IOT_PUSH），换会话按主键定位本地用户。 |
 | `SsoLoginRequest.ticket` | string | 跳转 URL 携带的票据 | 必填；校验通过后立即失效（防重放）。 |
 | `LoginResponse.deploymentMode` | string | 部署模式 | `IOT_COLLABORATIVE` / `STANDALONE`；前端据此控制 IOT 维护数据域写按钮显隐。 |
 | `ProfileResponse.permissions` | array<string> | 全部权限码 | 格式 `resource:read` / `resource:write`；供前端路由守卫与按钮显隐。 |

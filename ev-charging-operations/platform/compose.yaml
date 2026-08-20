@@ -7,11 +7,11 @@ services:
     environment:
       MYSQL_DATABASE: evco_foundation
       MYSQL_ROOT_PASSWORD: ${EVCO_MYSQL_ROOT_PASSWORD:-replace-with-local-only-password}
-      TZ: UTC
+      TZ: Asia/Shanghai
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_0900_ai_ci
-      - --default-time-zone=+00:00
+      - --default-time-zone=+08:00
       - --log-bin=mysql-bin
       - --binlog-format=ROW
     ports:

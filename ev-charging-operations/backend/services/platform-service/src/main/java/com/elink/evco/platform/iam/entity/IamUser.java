@@ -13,7 +13,7 @@ import lombok.Setter;
 /**
  * IAM 管理端用户（iam_user）：状态机 active/locked/disabled，软删释放登录名。
  *
- * <p>IOT 协同模式下由 IOT 推送维护（source=IOT_PUSH、沿用 IOT 用户 ID）； 平台扩展字段（locked_until 等）推送时不被覆盖（设计包 §8.3）。
+ * <p>IOT 协同模式下由 IOT 推送维护（source=IOT_PUSH、IOT 用户 ID 直接作本表主键， 无独立 iot_user_id 冗余列）；平台扩展字段（locked_until 等）推送时不被覆盖（设计包 §8.3）。
  */
 @Setter
 @Getter
@@ -44,7 +44,7 @@ public class IamUser {
     /** 数据来源：IOT 协同模式推送。 */
     public static final String SOURCE_IOT_PUSH = "IOT_PUSH";
 
-    /** 用户 ID（雪花 ID；IOT 模式沿用 IOT 推送 ID）。 */
+    /** 用户 ID（雪花 ID；IOT 协同模式沿用 IOT 推送的用户 ID 作主键，SSO 按本 ID 定位）。 */
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
@@ -62,9 +62,6 @@ public class IamUser {
 
     /** 用户类型：PLATFORM_SUPER/TENANT_ADMIN/NORMAL。 */
     private String userType;
-
-    /** IOT 平台用户 ID；SSO 免登录定位键，source=IOT_PUSH 时必填。 */
-    private Long iotUserId;
 
     /** 数据来源：PLATFORM/IOT_PUSH。 */
     private String source;
@@ -90,17 +87,17 @@ public class IamUser {
     /** 最近登录时间；由 auth_session 登录成功后回写。 */
     private LocalDateTime lastLoginAt;
 
-    /** 最近登录 IP（IPv4/IPv6）。 */
+    /** 最近登录 IP（IPv4；纯 IPv6 来源存 NULL）。 */
     private String lastLoginIp;
 
     /** 乐观锁版本；更新时递增。 */
     @Version private Integer version;
 
-    /** 创建时间（UTC），插入自动填充。 */
+    /** 创建时间（北京时间），插入自动填充。 */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /** 更新时间（UTC），插入/更新自动填充。 */
+    /** 更新时间（北京时间），插入/更新自动填充。 */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 

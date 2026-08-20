@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: EVCO IAM 用户与角色 API
-  version: 1.2.0
+  version: 1.2.1
   description: |
     P1/P2 管理端 IAM 管理用户与角色绑定的 OpenAPI 契约。
     M1 个人充电用户不配置页面或功能角色。
@@ -12,6 +12,11 @@ info:
     roles/status 写端点补充 IOT 协同模式 403（DEPLOYMENT_MODE_READONLY）声明。
     v1.2.0：角色替换补乐观锁——ReplaceUserRolesRequest 必填 version，
     并发替换返回 409 VERSION_CONFLICT（权限变更需与其他写端点一致的冲突信号）。
+    v1.2.1：W2 API 检查报告 F1/F2 处置——明确 iam_user 主体为
+    平台管理员、租户管理员、租户普通用户等各级受授权管理主体
+    （平台级仅平台管理员一种角色，企业级成员账号随 W7 交付）；
+    CreateUserRequest.tenantId 补注：W2 平台管理员页面创建平台级用户时必须省略，
+    租户级用户创建入口随 W7 租户管理菜单交付。
 paths:
   /api/v1/iam/users:
     get:
@@ -261,7 +266,7 @@ components:
           description: 初始绑定角色标识集合（雪花 ID 字符串形式）。
         tenantId:
           type: string
-          description: 所属租户 ID（雪花 ID 字符串形式）；平台管理员可省略。
+          description: 所属租户 ID（雪花 ID 字符串形式）；W2 平台管理员页面创建平台级用户时必须省略，租户级用户创建入口随 W7 租户管理菜单交付。
     UpdateUserRequest:
       type: object
       additionalProperties: false

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: EVCO 认证服务 API
-  version: 1.2.0
+  version: 1.3.0
   description: |
     平台认证服务的 OpenAPI 契约。
     覆盖登录（图形验证码）、登出、刷新、撤销、M1 微信登录 Mock、
@@ -85,10 +85,11 @@ paths:
     post:
       summary: SSO 免登录（ticket 换会话）
       description: |
-        仅 IOT 协同模式启用。用户从 IOT 平台跳转 P1 前端 /sso/login?ticket=xxx 后调用；
+        仅 IOT 协同模式启用（独立部署模式入口整体关闭，调用一律 403）。用户从 IOT 平台跳转 P1 前端 /sso/login?ticket=xxx 后调用；
         校验使用 Redis GETDEL 原子读取并删除（并发同 ticket 有且仅有一个成功，防重放），
         读到 nil 统一返回 SSO_TICKET_INVALID（不区分不存在/已用/已过期，防探测）；
-        消费成功后按 iotUserId 定位 iam_user（source=IOT_PUSH、status=active），
+        消费成功后按 iotUserId（即 iam_user 主键，IOT 推送用户沿用 IOT ID 作主键）定位
+        iam_user（source=IOT_PUSH、status=active），
         签发与密码登录一致的令牌对；仅识别已推送用户，本地不存在或不可用返回 SSO_USER_NOT_FOUND
         （ticket 保持已消费，不回滚复活）。Redis 故障时整体 fail-closed。
       operationId: ssoLogin
@@ -294,7 +295,7 @@ components:
           description: 一次性票据随机串（≥32 字符，CSPRNG 生成）；写入键 sso:ticket:{ticket}，SET EX 120 NX（撞号拒绝）；P1 侧校验用 GETDEL 原子消费；原文不写日志/审计（仅记 SHA-256 指纹前 8 位）。
         iotUserId:
           type: string
-          description: IOT 侧用户 ID（雪花 ID 字符串形式）；P1 按 iam_user.iot_user_id（source=IOT_PUSH）定位本地用户。
+          description: IOT 侧用户 ID（雪花 ID 字符串形式）；IOT 协同模式推送用户沿用 IOT ID 作 iam_user 主键，换会话按主键定位本地用户（source=IOT_PUSH）。
         displayName:
           type: string
           description: IOT 侧展示名；仅用于审计记录，不覆盖本地用户资料。

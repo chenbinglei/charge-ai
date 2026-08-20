@@ -40,11 +40,11 @@ public class IamRole {
     /** 数据来源：PLATFORM/IOT_PUSH。 */
     private String source;
 
-    /** 创建时间（UTC），插入自动填充。 */
+    /** 创建时间（北京时间），插入自动填充。 */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /** 更新时间（UTC），插入/更新自动填充。 */
+    /** 更新时间（北京时间），插入/更新自动填充。 */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 

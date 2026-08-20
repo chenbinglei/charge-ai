@@ -1,6 +1,5 @@
 package com.elink.evco.platform.iam.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.elink.evco.platform.iam.cache.RedisKeys;
 import com.elink.evco.platform.iam.dto.SsoTicketPushRequest;
 import com.elink.evco.platform.iam.entity.AuthSession;
@@ -163,14 +162,12 @@ public class SsoServiceImpl implements SsoService {
             // 不区分不存在/已用/已过期，防探测。
             throw new BusinessException(PlatformErrorCode.SSO_TICKET_INVALID);
         }
-        // 3. 定位已推送且 active 的本地用户。
-        IamUser user =
-                userMapper.selectOne(
-                        new LambdaQueryWrapper<IamUser>()
-                                .eq(IamUser::getIotUserId, Long.parseLong(iotUserId.trim()))
-                                .eq(IamUser::getSource, IamUser.SOURCE_IOT_PUSH)
-                                .isNull(IamUser::getDeletedAt));
-        if (user == null || !IamUser.STATUS_ACTIVE.equals(user.getStatus())) {
+        // 3. 定位已推送且 active 的本地用户：IOT 推送的用户 ID 即本表主键，直接按主键查。
+        IamUser user = userMapper.selectById(Long.parseLong(iotUserId.trim()));
+        if (user == null
+                || user.getDeletedAt() != null
+                || !IamUser.SOURCE_IOT_PUSH.equals(user.getSource())
+                || !IamUser.STATUS_ACTIVE.equals(user.getStatus())) {
             throw new BusinessException(PlatformErrorCode.SSO_USER_NOT_FOUND);
         }
         // 4. 签发会话（SSO 类型）并落审计。

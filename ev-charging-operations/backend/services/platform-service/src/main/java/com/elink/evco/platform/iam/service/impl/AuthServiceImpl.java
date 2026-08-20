@@ -29,7 +29,6 @@ import com.elink.evco.web.security.AuthContext;
 import com.elink.evco.web.security.JwtTokenProvider;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -169,7 +168,7 @@ public class AuthServiceImpl implements AuthService {
      * @return 登录响应。
      */
     private LoginVO completeLogin(IamUser user, String authType, String ip, String userAgent) {
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime now = LocalDateTime.now();
         userMapper.update(
                 null,
                 new LambdaUpdateWrapper<IamUser>()
@@ -208,7 +207,7 @@ public class AuthServiceImpl implements AuthService {
      * @param user 用户实体。
      */
     private void ensureLoginAllowed(IamUser user) {
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime now = LocalDateTime.now();
         if (IamUser.STATUS_DISABLED.equals(user.getStatus())) {
             throw new BusinessException(PlatformErrorCode.UNAUTHENTICATED, "账号已停用，请联系管理员");
         }
@@ -256,7 +255,7 @@ public class AuthServiceImpl implements AuthService {
      * @param user 用户实体。
      */
     private void recordPasswordFailure(IamUser user) {
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime now = LocalDateTime.now();
         int windowMinutes = appProperties.getAuth().getLockout().getLockMinutes();
         int maxFails = appProperties.getAuth().getLockout().getMaxFails();
         boolean windowValid =
@@ -324,7 +323,7 @@ public class AuthServiceImpl implements AuthService {
                 || RefreshToken.STATUS_REVOKED.equals(token.getStatus())) {
             throw new BusinessException(PlatformErrorCode.AUTH_REFRESH_TOKEN_USED);
         }
-        if (token.getExpiresAt().isBefore(LocalDateTime.now(ZoneOffset.UTC))) {
+        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new BusinessException(PlatformErrorCode.AUTH_TOKEN_EXPIRED, "refresh_token 已过期");
         }
         // 2. 会话与用户可用性校验。
@@ -345,7 +344,7 @@ public class AuthServiceImpl implements AuthService {
                         .eq(RefreshToken::getId, token.getId())
                         .eq(RefreshToken::getStatus, RefreshToken.STATUS_ACTIVE)
                         .set(RefreshToken::getStatus, RefreshToken.STATUS_USED)
-                        .set(RefreshToken::getUpdatedAt, LocalDateTime.now(ZoneOffset.UTC)));
+                        .set(RefreshToken::getUpdatedAt, LocalDateTime.now()));
         SessionService.IssuedTokens tokens =
                 sessionService.issue(
                         user, session.getAuthType(), session.getIp(), session.getUserAgent());

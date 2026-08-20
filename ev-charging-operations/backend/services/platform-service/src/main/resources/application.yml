@@ -6,7 +6,7 @@ spring:
     banner-mode: "off"
   # 数据源指向 evco_iam 事实库；连接串与凭据不落仓库，默认值仅供本地 Compose。
   datasource:
-    url: jdbc:mysql://${EVCO_MYSQL_HOST:localhost}:${EVCO_MYSQL_PORT:3306}/${EVCO_MYSQL_DATABASE:evco_iam}?connectionTimeZone=UTC&useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true
+    url: jdbc:mysql://${EVCO_MYSQL_HOST:localhost}:${EVCO_MYSQL_PORT:3306}/${EVCO_MYSQL_DATABASE:evco_iam}?connectionTimeZone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true
     username: ${EVCO_MYSQL_USERNAME:root}
     password: ${EVCO_MYSQL_PASSWORD:replace-with-local-only-password}
     hikari:

@@ -53,7 +53,7 @@ W2 范围内，`platform-service` 是唯一新增业务事实的服务。`api-ga
 
 | 迁移路径 | 核心表 | 必须冻结的字段与约束 |
 | --- | --- | --- |
-| `database/mysql/evco_iam/migration/V202608240001__create_iam_user_and_role.sql` | `iam_user`、`iam_role`、`iam_user_role` | `iam_user.username` 租户范围内唯一；`iam_user.iot_user_id`（IOT 用户 ID，SSO 免登录定位键，唯一，source=IOT_PUSH 时必填）；`iam_user.source` 枚举 `PLATFORM`/`IOT_PUSH`；`iam_user.status` 枚举 `active`/`locked`/`disabled`；`iam_user.version` 乐观锁；`iam_user.tenant_id` 数据范围；`iam_role.tenant_id` 所属租户（平台级角色使用系统租户 ID，对齐 IOT `t_role`），`tenant_id + code` 唯一；`iam_user_role` 多对多，`user_id + role_id` 唯一，含 `source` 字段（`PLATFORM`/`IOT_PUSH`）；逻辑删除 `deleted_at`；审计字段完整 |
+| `database/mysql/evco_iam/migration/V202608240001__create_iam_user_and_role.sql` | `iam_user`、`iam_role`、`iam_user_role` | `iam_user.username` 租户范围内唯一；IOT 协同模式推送用户沿用 IOT 用户 ID 作 `iam_user.id` 主键（SSO 免登录按主键定位，DEC-20260820-016 删除独立 `iot_user_id` 映射列）；`iam_user.source` 枚举 `PLATFORM`/`IOT_PUSH`；`iam_user.status` 枚举 `active`/`locked`/`disabled`；`iam_user.version` 乐观锁；`iam_user.tenant_id` 数据范围；`iam_role.tenant_id` 所属租户（平台级角色使用系统租户 ID，对齐 IOT `t_role`），`tenant_id + code` 唯一；`iam_user_role` 多对多，`user_id + role_id` 唯一，含 `source` 字段（`PLATFORM`/`IOT_PUSH`）；逻辑删除 `deleted_at`；审计字段完整 |
 | `database/mysql/evco_iam/migration/V202608240002__create_auth_session_and_token.sql` | `auth_session`、`refresh_token` | `auth_session.user_id` 关联 `iam_user`；`auth_session.auth_type` 枚举 `PASSWORD`/`SSO`（SSO 免登录会话标记）；`auth_session.status` 枚举 `active`/`expired`/`revoked`；`auth_session.expires_at` TTL；`refresh_token.token_hash` 唯一；`refresh_token.status` 枚举 `active`/`used`/`revoked`；`refresh_token.expires_at` TTL；审计字段完整 |
 | `database/mysql/evco_iam/migration/V202608240003__create_iam_audit_log.sql` | `iam_audit_log` | `iam_audit_log.actor_id` 操作者；`iam_audit_log.action` 枚举（`create`/`update`/`delete`/`status_change`/`role_replace`/`login`/`logout`/`token_revoke`）；`iam_audit_log.target_type` + `target_id`；`iam_audit_log.trace_id`；`iam_audit_log.summary` 脱敏摘要；`iam_audit_log.tenant_id`；按时间索引 |
 | `database/mysql/evco_iam/migration/V202608240004__create_outbox_and_inbox.sql` | `outbox_event`、`inbox_event` | `outbox_event.event_id` 唯一；`outbox_event.event_type` 大版本；`outbox_event.payload_summary` 脱敏摘要；`outbox_event.status` 枚举 `PENDING`/`PUBLISHED`/`RETRYABLE_FAILURE`/`MANUAL_REVIEW`；`inbox_event.consumer_service + event_id` 唯一；`inbox_event.result` 枚举 `APPLIED`/`DUPLICATE`/`RETRYABLE_FAILURE`/`DLQ` |
@@ -651,7 +651,7 @@ IOT 平台用户免登录直接进入 P1 平台，采用**一次性 ticket 换�
 
 1. 用户在 IOT 平台点击「充电运营平台」入口；IOT 后端生成一次性 ticket（≥32 字符随机串），通过 `POST /api/v1/auth/sso/tickets`（服务间凭证 X-API-Key/mTLS）推送到 P1；P1 存 Redis（TTL 120 秒）。
 2. IOT 前端重定向浏览器到 P1 前端 `/sso/login?ticket=xxx`；前端自动调用 `POST /api/v1/auth/sso/login` 完成换会话，直接进入平台首页，用户无感知。
-3. **仅识别已推送用户**：按 `iam_user.iot_user_id`（source=IOT_PUSH、status=active）定位本地用户后签发与密码登录一致的令牌对；本地不存在或不可用返回 `SSO_USER_NOT_FOUND`(403)，提示联系 IOT 管理员；P1 不做 JIT 即时开户。
+3. **仅识别已推送用户**：按 `iam_user.id` 主键（IOT 协同模式推送用户沿用 IOT 用户 ID 作主键，source=IOT_PUSH、status=active）定位本地用户后签发与密码登录一致的令牌对；本地不存在或不可用返回 `SSO_USER_NOT_FOUND`(403)，提示联系 IOT 管理员；P1 不做 JIT 即时开户。
 4. **防重放**（实现策略详见 [认证与SSO接口规范 §4.1](../api/认证与SSO接口规范-v1.md)）：Redis 键 `sso:ticket:{ticket}`（TTL 120 秒，`SET ... EX 120 NX` 唯一性写入）；校验用 `GETDEL` 原子读取并删除——并发携带同一 ticket 的请求有且仅有一个成功，其余返回 `SSO_TICKET_INVALID`(401)；失败不区分「不存在/已用/已过期」防探测；用户定位失败后 ticket 不回滚复活；ticket 原文不入日志（审计只记 SHA-256 指纹前 8 位）；Redis 故障时 fail-closed 整体拒绝。
 5. **模式边界**：仅 IOT 协同模式启用；独立部署模式 `/api/v1/auth/sso/*` 入口关闭（返回 `FORBIDDEN`）。企业端/小程序不使用本机制。
 6. **审计**：SSO 登录在 auth_session 记录 `auth_type=SSO`（密码登录为 `PASSWORD`）与来源 IP，写入操作日志。

@@ -1,12 +1,14 @@
 openapi: 3.1.0
 info:
   title: EVCO 个人用户主档与渠道身份映射 API
-  version: 1.0.0
+  version: 1.0.1
   description: |
     个人用户主档与渠道身份映射的 OpenAPI 契约。
     L3 字段（外部主体原文、手机号）加密存储且日志只留脱敏值。
     M1 不提供自助绑定/解绑/账户合并。
     引用 platform-foundation-v1.yaml 的公共组件。
+    v1.0.1：W2 API 检查报告 F4 处置——POST /api/v1/personal-users 标注为
+    服务内部端点（M1 渠道登录链路调用，不挂管理端权限注解）。
 paths:
   /api/v1/personal-users:
     get:
@@ -37,6 +39,7 @@ paths:
           description: 分页查询成功
     post:
       summary: 渠道登录幂等创建个人用户主档
+      description: 服务内部端点（M1 渠道登录链路调用，授权码服务端换取，不信任客户端）；不挂管理端权限注解，不存在持 personal_user:write 的管理端调用方，P1 管理端不提供手工开户。
       operationId: createPersonalUser
       parameters:
         - $ref: './platform-foundation-v1.yaml#/components/parameters/IdempotencyKey'
