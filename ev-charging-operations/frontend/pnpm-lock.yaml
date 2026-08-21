@@ -250,6 +250,9 @@ importers:
 
   apps/operations-web:
     dependencies:
+      '@element-plus/icons-vue':
+        specifier: ^2.3.2
+        version: 2.3.2(vue@3.5.41(typescript@5.9.3))
       '@evco/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
@@ -268,6 +271,9 @@ importers:
       vue:
         specifier: 3.5.41
         version: 3.5.41(typescript@5.9.3)
+      vue-router:
+        specifier: 4.4.4
+        version: 4.4.4(vue@3.5.41(typescript@5.9.3))
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: 6.0.8
@@ -6879,6 +6885,11 @@ snapshots:
     dependencies:
       '@vue/devtools-api': 6.6.4
       vue: 3.4.21(typescript@5.9.3)
+
+  vue-router@4.4.4(vue@3.5.41(typescript@5.9.3)):
+    dependencies:
+      '@vue/devtools-api': 6.6.4
+      vue: 3.5.41(typescript@5.9.3)
 
   vue-tsc@3.3.10(typescript@5.9.3):
     dependencies:
