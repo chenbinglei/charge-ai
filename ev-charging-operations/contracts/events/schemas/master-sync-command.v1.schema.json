@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.evco.local/events/master-sync-command.v1.schema.json",
+  "title": "master.sync-command.accepted.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "eventType", "schemaVersion", "occurredAt", "aggregateType", "aggregateId", "partitionKey", "traceId", "idempotencyKey", "payload"],
+  "properties": {
+    "eventId": {"type": "string", "format": "uuid"},
+    "eventType": {"const": "master.sync-command.accepted.v1"},
+    "schemaVersion": {"const": "1.0"},
+    "occurredAt": {"type": "string", "format": "date-time"},
+    "aggregateType": {"enum": ["platformAdmin", "tenant", "tenantMember", "station", "device", "connector"]},
+    "aggregateId": {"type": "string", "minLength": 1},
+    "partitionKey": {"type": "string", "pattern": "^[^:]+:[^:]+$"},
+    "traceId": {"type": "string", "minLength": 16, "maxLength": 64},
+    "idempotencyKey": {"type": "string", "minLength": 1, "maxLength": 128},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceSystem", "externalId", "entityType", "operation", "entityVersion", "sequenceNo", "watermark", "mode", "signatureRef"],
+      "properties": {
+        "sourceSystem": {"type": "string", "minLength": 1},
+        "externalId": {"type": "string", "minLength": 1},
+        "entityType": {"enum": ["platformAdmin", "tenant", "tenantMember", "station", "device", "connector"]},
+        "operation": {"enum": ["UPSERT", "DEACTIVATE", "DELETE"]},
+        "entityVersion": {"type": "integer", "minimum": 1},
+        "sequenceNo": {"type": "integer", "minimum": 1},
+        "watermark": {"type": "string", "format": "date-time"},
+        "mode": {"const": "iot-collaborative"},
+        "signatureRef": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

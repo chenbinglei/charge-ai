@@ -1,0 +1,27 @@
+{
+  "name": "@evco/operations-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "@evco/api-client": "workspace:*",
+    "@evco/design-tokens": "workspace:*",
+    "@evco/types": "workspace:*",
+    "element-plus": "2.14.4",
+    "pinia": "2.3.1",
+    "vue": "3.5.41",
+    "vue-router": "4.4.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "6.0.8",
+    "typescript": "5.9.3",
+    "vite": "6.4.3",
+    "vue-tsc": "3.3.10"
+  }
+}

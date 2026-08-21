@@ -1,0 +1,28 @@
+{
+  "name": "@evco/enterprise-admin-miniapp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build:h5": "uni build -p h5",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "3.0.0-5020420260813002",
+    "@dcloudio/uni-components": "3.0.0-5020420260813002",
+    "@evco/api-client": "workspace:*",
+    "@evco/design-tokens": "workspace:*",
+    "@evco/types": "workspace:*",
+    "@vue/reactivity": "3.4.21",
+    "@vue/runtime-core": "3.4.21",
+    "@vue/runtime-dom": "3.4.21",
+    "@vue/shared": "3.4.21",
+    "vue": "3.4.21"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "3.4.31",
+    "@dcloudio/vite-plugin-uni": "3.0.0-5020420260813002",
+    "typescript": "5.9.3",
+    "vite": "5.2.8",
+    "vue-tsc": "3.3.10"
+  }
+}

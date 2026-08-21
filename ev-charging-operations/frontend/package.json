@@ -1,0 +1,32 @@
+{
+  "name": "evco-frontend-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22.14.0 <23",
+    "pnpm": "11.19.0"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present run build",
+    "build:matrix": "pnpm --filter '@evco/*-web' --if-present run build && pnpm --filter @evco/operations-dashboard run build && pnpm --filter '@evco/*-miniapp' --if-present run build:h5",
+    "check:boundary": "node scripts/check-boundaries.mjs",
+    "format:check": "prettier --check .",
+    "format:write": "prettier --write .",
+    "lint": "eslint .",
+    "sbom": "node scripts/generate-sbom.mjs",
+    "test": "pnpm -r --if-present run test",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "verify": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build:matrix && pnpm run check:boundary"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@types/node": "22.20.1",
+    "eslint": "9.39.5",
+    "eslint-plugin-vue": "10.10.0",
+    "globals": "17.11.0",
+    "prettier": "3.9.6",
+    "sass": "1.102.0",
+    "typescript-eslint": "8.67.0"
+  }
+}

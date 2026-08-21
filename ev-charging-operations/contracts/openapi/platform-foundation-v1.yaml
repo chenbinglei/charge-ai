@@ -1,0 +1,96 @@
+openapi: 3.1.0
+info:
+  title: EVCO 平台 API 公共组件
+  version: 1.0.0
+  description: 统一 API 信封、分页、错误和幂等组件；不声明业务资源或运行时端点。
+paths: {}
+components:
+  parameters:
+    IdempotencyKey:
+      name: X-Idempotency-Key
+      in: header
+      required: false
+      description: 有副作用请求的幂等键；同一主体、端点与请求摘要重复时返回原结果。建议有副作用请求始终携带；缺失时服务端跳过幂等保护。
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+  headers:
+    TraceId:
+      description: 全链路追踪标识。
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+  schemas:
+    ApiResponse:
+      type: object
+      additionalProperties: false
+      required: [code, message, traceId, timestamp]
+      properties:
+        code:
+          type: string
+          description: 稳定业务结果码；成功固定为 SUCCESS。
+        message:
+          type: string
+          description: 面向调用方的中文提示，不含敏感信息或内部异常。
+        data:
+          oneOf:
+            - type: object
+            - type: array
+            - type: string
+            - type: number
+            - type: integer
+            - type: boolean
+            - type: 'null'
+          description: 由具体端点声明的结果对象。
+        traceId:
+          type: string
+          minLength: 16
+          maxLength: 128
+          description: 全链路追踪标识。
+        timestamp:
+          type: string
+          format: date-time
+          description: 服务端生成的 RFC 3339 UTC 时间。
+    PageResponse:
+      type: object
+      additionalProperties: false
+      required: [items, pageNo, pageSize, total]
+      properties:
+        items:
+          type: array
+          description: 当前页已定义类型的元素。
+          items: {}
+        pageNo:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+    ValidationDetail:
+      type: object
+      additionalProperties: false
+      required: [field, reason]
+      properties:
+        field:
+          type: string
+          description: 参数字段名。
+        reason:
+          type: string
+          description: 脱敏后的中文校验原因。
+    ErrorData:
+      type: object
+      additionalProperties: false
+      required: [retryable]
+      properties:
+        retryable:
+          type: boolean
+          description: 是否可在不改变请求语义的前提下安全重试。
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationDetail'

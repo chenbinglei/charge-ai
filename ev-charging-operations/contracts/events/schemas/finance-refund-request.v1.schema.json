@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.evco.local/events/finance-refund-request.v1.schema.json",
+  "title": "finance.refund.requested.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "eventType", "schemaVersion", "occurredAt", "aggregateType", "aggregateId", "partitionKey", "traceId", "idempotencyKey", "payload"],
+  "properties": {
+    "eventId": {"type": "string", "format": "uuid"},
+    "eventType": {"const": "finance.refund.requested.v1"},
+    "schemaVersion": {"const": "1.0"},
+    "occurredAt": {"type": "string", "format": "date-time"},
+    "aggregateType": {"const": "paymentTransaction"},
+    "aggregateId": {"type": "string", "format": "uuid"},
+    "partitionKey": {"type": "string", "format": "uuid"},
+    "traceId": {"type": "string", "minLength": 16, "maxLength": 64},
+    "idempotencyKey": {"type": "string", "minLength": 1, "maxLength": 128},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["refundRequestId", "originalPaymentTransactionId", "chargingOrderId", "amountMinor", "currency", "refundKind", "reasonCode", "requestedBy"],
+      "properties": {
+        "refundRequestId": {"type": "string", "format": "uuid"},
+        "originalPaymentTransactionId": {"type": "string", "format": "uuid"},
+        "chargingOrderId": {"type": "string", "format": "uuid"},
+        "amountMinor": {"type": "integer", "minimum": 1},
+        "currency": {"const": "CNY"},
+        "refundKind": {"enum": ["UNUSED_TOPUP", "CHARGING_ORDER_REFUND", "PRICE_CORRECTION"]},
+        "reasonCode": {"type": "string", "maxLength": 64},
+        "requestedBy": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

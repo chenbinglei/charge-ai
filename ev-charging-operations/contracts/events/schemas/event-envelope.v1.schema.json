@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.evco.local/events/event-envelope.v1.schema.json",
+  "title": "event_envelope.v1",
+  "description": "EVCO 内部 Kafka 业务事件的公共信封；不声明任何运行时 Topic 或消费者。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "eventId",
+    "eventType",
+    "eventVersion",
+    "schemaVersion",
+    "occurredAt",
+    "aggregateType",
+    "aggregateId",
+    "partitionKey",
+    "traceId",
+    "idempotencyKey",
+    "producer",
+    "scope",
+    "payload"
+  ],
+  "properties": {
+    "eventId": {"type": "string", "format": "uuid", "description": "全局唯一事件标识。"},
+    "eventType": {"type": "string", "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*){2,}\\.v1$", "description": "形如 domain.entity.past-tense.v1 的稳定事件类型。"},
+    "eventVersion": {"const": "1", "description": "事件大版本，须与 eventType 的 v1 一致。"},
+    "schemaVersion": {"type": "string", "pattern": "^1\\.[0-9]+$", "description": "v1 事件内的兼容 Schema 版本。"},
+    "occurredAt": {"type": "string", "format": "date-time", "description": "事实发生的 RFC 3339 UTC 时间。"},
+    "aggregateType": {"type": "string", "minLength": 1, "maxLength": 80, "description": "事实聚合类型。"},
+    "aggregateId": {"type": "string", "minLength": 1, "maxLength": 128, "description": "事实聚合标识。"},
+    "partitionKey": {"type": "string", "minLength": 1, "maxLength": 160, "description": "与 Kafka key 完全一致的局部顺序键。"},
+    "traceId": {"type": "string", "pattern": "^[A-Za-z0-9_-]{16,128}$", "description": "端到端追踪标识。"},
+    "idempotencyKey": {"type": "string", "minLength": 1, "maxLength": 128, "description": "业务去重键。"},
+    "producer": {"type": "string", "pattern": "^[a-z][a-z0-9-]*-service$", "description": "唯一事实生产服务。"},
+    "scope": {
+      "description": "数据范围；平台范围不带 tenantId，租户范围必须带 tenantId。",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scopeType", "dataScopeVersion"],
+          "properties": {
+            "scopeType": {"const": "PLATFORM"},
+            "dataScopeVersion": {"type": "integer", "minimum": 1}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scopeType", "tenantId", "dataScopeVersion"],
+          "properties": {
+            "scopeType": {"const": "TENANT"},
+            "tenantId": {"type": "string", "minLength": 1, "maxLength": 64},
+            "workspaceId": {"type": "string", "minLength": 1, "maxLength": 64},
+            "dataScopeVersion": {"type": "integer", "minimum": 1}
+          }
+        }
+      ]
+    },
+    "payload": {"type": "object", "description": "由具体事件 Schema 限定的业务载荷。"}
+  }
+}

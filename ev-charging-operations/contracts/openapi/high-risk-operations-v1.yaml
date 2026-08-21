@@ -1,0 +1,50 @@
+openapi: 3.1.0
+info:
+  title: EVCO 高风险操作 API
+  version: 1.0.0
+paths:
+  /api/v1/device-control-commands:
+    post:
+      summary: 创建受控设备控制命令
+      operationId: createDeviceControlCommand
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202': {description: 已受理；命令将异步执行}
+        '409': {description: 状态版本、序列或幂等键冲突}
+  /api/v1/refund-requests:
+    post:
+      summary: 针对一笔原支付交易创建退款申请
+      operationId: createRefundRequest
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202': {description: 已受理；财务资格校验待完成}
+        '409': {description: 退款金额或状态冲突}
+  /api/v1/iot/master-sync-commands:
+    post:
+      summary: 接收已签名的 IOT 协同模式主数据同步命令
+      operationId: acceptIotMasterSync
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202': {description: 已受理，将按顺序应用}
+        '403': {description: 实例模式或来源不允许}
+  /api/v1/regulatory-tasks/{regulatoryTaskId}:
+    get:
+      summary: 查询脱敏任务、尝试、回执与 C3-R 证据状态
+      operationId: getRegulatoryTask
+      parameters:
+        - name: regulatoryTaskId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200': {description: 监管任务投影}
+components:
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, minLength: 1, maxLength: 128}

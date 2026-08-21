@@ -1,0 +1,366 @@
+openapi: 3.1.0
+info:
+  title: EVCO IAM 用户与角色 API
+  version: 1.2.1
+  description: |
+    P1/P2 管理端 IAM 管理用户与角色绑定的 OpenAPI 契约。
+    M1 个人充电用户不配置页面或功能角色。
+    引用 platform-foundation-v1.yaml 的公共组件。
+    本文件是设计草案，不是已发布运行时 API。
+    v1.1.0：全部 200 响应补齐 ApiResponse 信封与 data 类型
+    （UserDetailVO/UserRoleBindingVO/UserStatusVO/RoleOptionVO 数组）；
+    roles/status 写端点补充 IOT 协同模式 403（DEPLOYMENT_MODE_READONLY）声明。
+    v1.2.0：角色替换补乐观锁——ReplaceUserRolesRequest 必填 version，
+    并发替换返回 409 VERSION_CONFLICT（权限变更需与其他写端点一致的冲突信号）。
+    v1.2.1：W2 API 检查报告 F1/F2 处置——明确 iam_user 主体为
+    平台管理员、租户管理员、租户普通用户等各级受授权管理主体
+    （平台级仅平台管理员一种角色，企业级成员账号随 W7 交付）；
+    CreateUserRequest.tenantId 补注：W2 平台管理员页面创建平台级用户时必须省略，
+    租户级用户创建入口随 W7 租户管理菜单交付。
+paths:
+  /api/v1/iam/users:
+    get:
+      summary: 分页查询管理用户
+      operationId: pageIamUsers
+      parameters:
+        - name: username
+          in: query
+          schema: { type: string }
+        - name: displayName
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, locked, disabled] }
+        - name: roleId
+          in: query
+          schema: { type: string }
+          description: 角色 ID（雪花 ID 字符串形式）。
+        - name: pageNo
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: 分页查询成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: './platform-foundation-v1.yaml#/components/schemas/PageResponse'
+                          - type: object
+                            properties:
+                              items:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/UserListVO'
+    post:
+      summary: 新增管理用户并绑定初始角色
+      operationId: createIamUser
+      parameters:
+        - $ref: './platform-foundation-v1.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '200':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserDetailVO'
+        '403':
+          description: IOT 协同模式下该数据域只读（DEPLOYMENT_MODE_READONLY）
+        '409':
+          description: 用户名重复或幂等冲突
+  /api/v1/iam/users/{userId}:
+    get:
+      summary: 查询单一管理用户
+      operationId: getIamUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserDetailVO'
+        '404':
+          description: 用户不存在或不可见
+    put:
+      summary: 编辑管理用户资料
+      operationId: updateIamUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserDetailVO'
+        '403':
+          description: IOT 协同模式下该数据域只读（DEPLOYMENT_MODE_READONLY）
+        '409':
+          description: 版本冲突
+    delete:
+      summary: 逻辑删除管理用户
+      operationId: deleteIamUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: version
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+        '403':
+          description: IOT 协同模式下该数据域只读（DEPLOYMENT_MODE_READONLY）
+        '409':
+          description: 版本冲突
+  /api/v1/iam/users/{userId}/roles:
+    put:
+      summary: 以完整角色集合替换绑定
+      operationId: replaceIamUserRoles
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceUserRolesRequest'
+      responses:
+        '200':
+          description: 角色替换成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserRoleBindingVO'
+        '403':
+          description: IOT 协同模式下该数据域只读（DEPLOYMENT_MODE_READONLY）或越权授予（IAM_ROLE_OUT_OF_SCOPE）
+        '409':
+          description: 乐观锁版本冲突（VERSION_CONFLICT）
+  /api/v1/iam/users/{userId}/status:
+    patch:
+      summary: 启用、停用或锁定用户
+      operationId: changeIamUserStatus
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeUserStatusRequest'
+      responses:
+        '200':
+          description: 状态迁移成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserStatusVO'
+        '403':
+          description: IOT 协同模式下该数据域只读（DEPLOYMENT_MODE_READONLY）
+        '409':
+          description: 最后管理员保护、状态冲突或版本冲突
+  /api/v1/iam/roles/options:
+    get:
+      summary: 查询可授予角色选项
+      operationId: listIamRoleOptions
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './platform-foundation-v1.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RoleOptionVO'
+components:
+  schemas:
+    CreateUserRequest:
+      type: object
+      additionalProperties: false
+      required: [username, displayName, roleIds]
+      properties:
+        username:
+          type: string
+          description: 管理用户登录名；租户范围内唯一。
+        displayName:
+          type: string
+          description: 后台展示姓名。
+        roleIds:
+          type: array
+          items: { type: string }
+          minItems: 1
+          description: 初始绑定角色标识集合（雪花 ID 字符串形式）。
+        tenantId:
+          type: string
+          description: 所属租户 ID（雪花 ID 字符串形式）；W2 平台管理员页面创建平台级用户时必须省略，租户级用户创建入口随 W7 租户管理菜单交付。
+    UpdateUserRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        displayName:
+          type: string
+        version:
+          type: integer
+          description: 乐观锁版本。
+    ReplaceUserRolesRequest:
+      type: object
+      additionalProperties: false
+      required: [roleIds, version]
+      properties:
+        roleIds:
+          type: array
+          items: { type: string }
+          description: 替换后的完整角色集合（雪花 ID 字符串形式）；空数组表示解除全部绑定。
+        version:
+          type: integer
+          description: 乐观锁版本；权限变更与其他写端点一致必须携带冲突信号。
+    ChangeUserStatusRequest:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [active, locked, disabled]
+          description: 目标账户状态；迁移以 IAM 状态机为准。
+    UserListVO:
+      type: object
+      properties:
+        id: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+        status:
+          type: string
+          enum: [active, locked, disabled]
+        roleNames:
+          type: array
+          items: { type: string }
+        tenantId: { type: string }
+        createdAt: { type: string, format: date-time }
+    UserDetailVO:
+      type: object
+      properties:
+        id: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+        status:
+          type: string
+          enum: [active, locked, disabled]
+        version: { type: integer }
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleOptionVO'
+        tenantId: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        initialPassword:
+          type: [string, 'null']
+          description: 一次性初始密码；仅创建响应返回，首次登录须改密，其余场景为 null。
+    RoleOptionVO:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        scope:
+          type: string
+          enum: [platform, tenant]
+        description: { type: string }
+    UserRoleBindingVO:
+      type: object
+      required: [userId, roles]
+      properties:
+        userId:
+          type: string
+          description: 用户 ID（雪花 ID 字符串形式）。
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleOptionVO'
+          description: 替换后的完整角色集合。
+    UserStatusVO:
+      type: object
+      required: [userId, status]
+      properties:
+        userId:
+          type: string
+          description: 用户 ID（雪花 ID 字符串形式）。
+        status:
+          type: string
+          enum: [active, locked, disabled]
+          description: 迁移后的账户状态。

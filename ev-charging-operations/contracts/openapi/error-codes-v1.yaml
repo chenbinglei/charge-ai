@@ -1,0 +1,116 @@
+version: 1.1.0
+title: EVCO 通用与 W1/W2 错误码
+description: 具体业务模块只能新增自己的稳定错误码，不能改变本文件既有码语义。
+codes:
+  SUCCESS:
+    httpStatus: 200
+    retryable: false
+    description: 操作成功。
+  VALIDATION_ERROR:
+    httpStatus: 400
+    retryable: false
+    description: 参数、格式或受控字段校验失败。
+  UNAUTHENTICATED:
+    httpStatus: 401
+    retryable: false
+    description: 未登录或令牌无效。
+  FORBIDDEN:
+    httpStatus: 403
+    retryable: false
+    description: 无页面、数据或业务操作权限。
+  DEPLOYMENT_MODE_READONLY:
+    httpStatus: 403
+    retryable: false
+    description: IOT 协同部署模式下，该数据域由 IOT 维护，平台侧只读，禁止写操作。
+  SSO_TICKET_INVALID:
+    httpStatus: 401
+    retryable: false
+    description: SSO 免登录票据无效、已使用或已过期。
+  SSO_USER_NOT_FOUND:
+    httpStatus: 403
+    retryable: false
+    description: SSO 免登录用户未由 IOT 推送到平台或当前不可用，需先在 IOT 侧创建并推送。
+  RESOURCE_NOT_FOUND:
+    httpStatus: 404
+    retryable: false
+    description: 资源不存在或对调用方不可见。
+  IDEMPOTENCY_CONFLICT:
+    httpStatus: 409
+    retryable: false
+    description: 相同幂等键对应不同请求摘要。
+  VERSION_CONFLICT:
+    httpStatus: 409
+    retryable: true
+    description: 乐观锁版本已变化，刷新后重新提交。
+  STATE_CONFLICT:
+    httpStatus: 409
+    retryable: false
+    description: 当前状态不允许该转换。
+  IAM_CHANNEL_IDENTITY_CONFLICT:
+    httpStatus: 409
+    retryable: false
+    description: 渠道身份已关联其他个人主档或需人工处置。
+  IAM_USER_NOT_FOUND:
+    httpStatus: 404
+    retryable: false
+    description: 管理用户不存在或对调用方不可见。
+  IAM_USERNAME_DUPLICATE:
+    httpStatus: 409
+    retryable: false
+    description: 用户名在租户范围内已存在。
+  IAM_LAST_ADMIN_PROTECTED:
+    httpStatus: 409
+    retryable: false
+    description: 不得停用最后一个可用平台超级管理员。
+  IAM_ROLE_OUT_OF_SCOPE:
+    httpStatus: 403
+    retryable: false
+    description: 操作者不可授予超出可授予范围的角色。
+  AUTH_TOKEN_INVALID:
+    httpStatus: 401
+    retryable: false
+    description: 令牌无效或已撤销。
+  AUTH_TOKEN_EXPIRED:
+    httpStatus: 401
+    retryable: false
+    description: 令牌已过期。
+  AUTH_REFRESH_TOKEN_USED:
+    httpStatus: 401
+    retryable: false
+    description: refresh_token 已使用或已撤销。
+  CONFIG_CHANNEL_CLOSED:
+    httpStatus: 422
+    retryable: false
+    description: 渠道已关闭，不可执行真实交易。
+  CONFIG_CONDITIONAL_CHANNEL_N_A:
+    httpStatus: 422
+    retryable: false
+    description: 条件渠道不适用（如银联/银盛未接入）。
+  FINANCE_FUNDING_LOT_NOT_REFUNDABLE:
+    httpStatus: 422
+    retryable: false
+    description: 资金批次不是现金来源、余额不可退或不满足原路由条件。
+  FINANCE_SETTLEMENT_ADJUSTMENT_REQUIRED:
+    httpStatus: 409
+    retryable: false
+    description: 原账单已锁定或付款，必须创建追加调整记录。
+  V2G_REAL_SERVICE_DISABLED:
+    httpStatus: 422
+    retryable: false
+    description: 真实 V2G 尚未获得独立批准，当前仅允许关闭态或模拟夹具。
+  V2G_WITHDRAWAL_DISABLED:
+    httpStatus: 422
+    retryable: false
+    description: V2G 提现申请、付款、回单和记录均未开通。
+  ECOSYSTEM_REGULATORY_TASK_CONFLICT:
+    httpStatus: 409
+    retryable: false
+    description: 同一监管目标、业务、版本和映射版本的任务冲突。
+  EVENT_SCHEMA_VERSION_UNSUPPORTED:
+    httpStatus: 422
+    retryable: false
+    description: 事件或 MQTT Schema 大版本不受支持。
+  INTERNAL_ERROR:
+    httpStatus: 500
+    retryable: true
+    description: 未预期系统错误；响应不含内部异常详情。

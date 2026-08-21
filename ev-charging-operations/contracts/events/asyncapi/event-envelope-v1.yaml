@@ -1,0 +1,18 @@
+asyncapi: 3.0.0
+info:
+  title: EVCO Kafka 事件共通信封
+  version: 1.0.0
+  description: 仅定义所有业务事件共用的消息组件，不声明运行时 Topic、发布者或消费者。
+defaultContentType: application/json
+channels: {}
+components:
+  schemas:
+    EventEnvelope:
+      $ref: ../schemas/event-envelope.v1.schema.json
+  messages:
+    EventEnvelopeMessage:
+      name: EventEnvelopeMessage
+      title: EVCO 业务事件共通信封
+      summary: 具体业务事件必须以此信封包装，并由各自 Schema 进一步约束 payload。
+      payload:
+        $ref: '#/components/schemas/EventEnvelope'

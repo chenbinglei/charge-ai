@@ -1,0 +1,19 @@
+# W1 允许的宽松许可证清单。任何新增许可证均须先经法务/安全审查并以变更记录批准。
+fail-on-severity: moderate
+fail-on-scopes:
+  - runtime
+  - development
+  - unknown
+license-check: true
+vulnerability-check: true
+allow-licenses:
+  - 0BSD
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - BlueOak-1.0.0
+  - CC-BY-4.0
+  - CC0-1.0
+  - ISC
+  - MIT
+  - Python-2.0

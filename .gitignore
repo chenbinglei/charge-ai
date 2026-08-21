@@ -1,0 +1,27 @@
+# macOS Finder metadata
+.DS_Store
+
+# Local editor and runtime artifacts
+.idea/
+.vscode/
+.svn/
+*.log
+
+# Java/Maven build outputs
+**/target/
+
+# JavaScript build outputs and local package stores
+**/node_modules/
+**/dist/
+**/coverage/
+**/artifacts/
+
+# Secrets and local environment overrides
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx

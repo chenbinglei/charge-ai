@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.evco.local/events/regulatory-task.v1.schema.json",
+  "title": "regulatory_task.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["regulatoryTaskId", "targetId", "businessType", "businessId", "businessVersion", "mappingVersion", "idempotencyKey", "status", "createdAt"],
+  "properties": {
+    "regulatoryTaskId": {"type": "string", "format": "uuid"},
+    "targetId": {"type": "string", "format": "uuid"},
+    "businessType": {"enum": ["ARCHIVE", "TARIFF", "STATUS", "ALARM", "CHARGING_ORDER", "V2G_ORDER"]},
+    "businessId": {"type": "string", "minLength": 1},
+    "businessVersion": {"type": "integer", "minimum": 1},
+    "mappingVersion": {"type": "string", "minLength": 1},
+    "idempotencyKey": {"type": "string", "minLength": 1, "maxLength": 128},
+    "status": {"enum": ["PENDING_VALIDATION", "PENDING_SEND", "SENDING", "SUCCEEDED", "RETRYABLE_FAILURE", "MANUAL_REVIEW", "CANCELLED"]},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "lastAttemptAt": {"type": "string", "format": "date-time"},
+    "receiptReference": {"type": "string", "maxLength": 256}
+  }
+}

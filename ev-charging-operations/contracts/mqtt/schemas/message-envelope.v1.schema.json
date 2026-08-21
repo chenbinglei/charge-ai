@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.evco.local/mqtt/message-envelope.v1.schema.json",
+  "title": "mqtt_message_envelope.v1",
+  "description": "EVCO 设备 MQTT 报文的公共元数据；具体 Topic 和业务 payload 在 W4 登记。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "messageId",
+    "schemaVersion",
+    "messageType",
+    "sourceSystem",
+    "deviceLifecycleId",
+    "connectorId",
+    "sourceSequence",
+    "sentAt",
+    "payload"
+  ],
+  "properties": {
+    "messageId": {"type": "string", "format": "uuid", "description": "设备或上游生成的唯一报文标识。"},
+    "schemaVersion": {"type": "string", "pattern": "^1\\.[0-9]+$", "description": "MQTT payload 兼容版本。"},
+    "messageType": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$", "description": "由具体 MQTT 契约登记的报文类型。"},
+    "sourceSystem": {"type": "string", "minLength": 1, "maxLength": 64, "description": "经 ACL 认证的来源系统。"},
+    "deviceLifecycleId": {"type": "string", "format": "uuid", "description": "设备生命周期标识。"},
+    "connectorId": {"type": "string", "minLength": 1, "maxLength": 64, "description": "枪口标识。"},
+    "sourceSequence": {"type": "integer", "minimum": 0, "description": "来源单调序号。"},
+    "sentAt": {"type": "string", "format": "date-time", "description": "设备/上游发送的 UTC 时间。"},
+    "payload": {"type": "object", "description": "由具体上/下行 MQTT Schema 限定的业务载荷。"}
+  }
+}
